@@ -39,8 +39,9 @@ module.exports = function (grunt) {
         tasks: ['newer:jshint:test', 'karma']
       },
       styles: {
-        files: ['<%= yeoman.app %>/styles/{,*/}*.css'],
-        tasks: ['newer:copy:styles', 'autoprefixer']
+        files: ['<%= yeoman.app %>/styles/{,*/}*.styl'],
+//        tasks: ['newer:copy:styles', 'autoprefixer']
+        tasks: ['stylus:compile', 'autoprefixer']
       },
       gruntfile: {
         files: ['Gruntfile.js']
@@ -274,16 +275,35 @@ module.exports = function (grunt) {
       }
     },
 
+    stylus: {
+      compile: {
+        options: {
+//          paths: ['path/to/import', 'another/to/import'],
+//          urlfunc: 'embedurl', // use embedurl('test.png') in our code to trigger Data URI embedding
+//          use: [
+//            require('fluidity') // use stylus plugin at compile time
+//          ],
+//          import: [      //  @import 'foo', 'bar/moo', etc. into every .styl file
+//            'foo',       //  that is compiled. These might be findable based on values you gave
+//            'bar/moo'    //  to `paths`, or a plugin you added under `use`
+//          ]
+        },
+        files: {
+          '.tmp/styles/main.css': ['<%= yeoman.app %>/styles/{,*/}*.styl'] // compile and concat into single file
+        }
+      }
+    },
+
     // Run some tasks in parallel to speed up the build process
     concurrent: {
       server: [
-        'copy:styles'
+        'stylus:compile'
       ],
       test: [
-        'copy:styles'
+        'stylus:compile'
       ],
       dist: [
-        'copy:styles',
+        'stylus:compile',
         'imagemin',
         'svgmin'
       ]
