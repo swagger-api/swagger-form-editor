@@ -1,9 +1,19 @@
 <div class="panel">
-  <ul class="items">
-    <li ng-repeat="item in items">{{item}}</li>
-  </ul>
-  {{hi}}
+  <div class="items">
+    <h2>Resources</h2>
+    <ul>
+      <li ng-repeat="resource in file.apis">{{resource.path}}</li>
+    </ul>
+  </div>
+
+  <div class="items">
+    <h2>Models</h2>
+    <ul>
+      <li ng-repeat="model in file.models">{{model.id}}</li>
+    </ul>
+  </div>
+
 </div>
 <div class="panel">
-  <div ui-ace ng-model="fileContents"></div>
+  <div ui-ace="{mode: 'json'}" readonly="true" ng-model="fileContents"></div>
 </div>
