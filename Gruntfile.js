@@ -29,7 +29,7 @@ module.exports = function (grunt) {
     watch: {
       js: {
         files: ['<%= yeoman.app %>/scripts/{,*/}*.js'],
-        tasks: ['newer:jshint:all'],
+//        tasks: ['newer:jshint:all'],
         options: {
           livereload: true
         }
