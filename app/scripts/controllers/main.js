@@ -1,11 +1,10 @@
 'use strict';
 
-app.controller('MainCtrl', function ($scope, $http) {
+app.controller('MainCtrl', function ($scope, $http, $filter) {
   $scope.items = ['/path1', '/path2'];
+  $scope.fileContents = "";
   $http.get('/data/pet-data.json').success(function(data) {
-    console.log(data);
-    $scope.fileContents = data;
-
+    $scope.fileContents = $filter('json')(data);
   });
 
 //  window.swagger = new SwaggerApi({
