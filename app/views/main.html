@@ -1,15 +1,16 @@
 <div class="panel">
+  <h1><span class="invert">Resource</span><div class="box">{{file.resourcePath}}</div></h1>
   <div class="items">
-    <h2>Resources</h2>
+    <h2><span class="invert">APIs</span></h2>
     <ul>
-      <li ng-repeat="resource in file.apis">{{resource.path}}</li>
+      <li class="box" ng-repeat="resource in file.apis">{{resource.path}}</li>
     </ul>
   </div>
 
   <div class="items">
-    <h2>Models</h2>
-    <ul>
-      <li ng-repeat="model in file.models">{{model.id}}</li>
+    <h2><span class="invert">Models</span></h2>
+    <ul class="last">
+      <li class="box" ng-repeat="model in file.models">{{model.id}}</li>
     </ul>
   </div>
 

@@ -1,16 +1,65 @@
 body {
   font: 14px sans-serif;
+  padding: 20px 50px;
+}
+
+h1 {
+  font-size: 20px;
+  border-left: 1px solid black;
+  margin: 0;
+  padding: 0 0 5px 0;
+
+  .box {
+    border-width: 2px;
+    padding: 3px 20px;
+    margin: 10px 30px 10px;
+    width: 240px;
+  }
 }
 
 h2 {
   font-size: 20px;
+  padding: 6px 0;
+  margin: 0;
+  border-left: 1px solid black;
+}
+
+.invert {
+  background-color: black;
+  color: white;
+  padding: 5px;
+  display: inline-block;
+}
+
+.box {
+  border: 1px solid black;
+  margin: 4px 0;
+  padding: 4px 8px;
 }
 
 .panel {
   display: inline-block;
   vertical-align: top;
   width: 48%;
+
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding-left: 30px;
+
+    border-left: 1px solid black;
+
+    &.last {
+      border-left: none;
+    }
+
+    li {
+      font-size: 16px;
+      width: 70%;
+    }
+  }
 }
 .ace_editor {
-  height: 300px;
+  margin-top: 25px;
+  height: 500px;
 }
