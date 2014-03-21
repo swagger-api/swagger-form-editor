@@ -29,6 +29,18 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.friendlyTypes = [];
 
+  $scope.paramTypeChanged = function(parameter) {
+    if (['query', 'header', 'path'].indexOf(parameter.paramType) > -1) {
+      parameter.allowMultiple = parameter.allowMultiple || false;
+    } else {
+      delete (parameter.allowMultiple);
+    }
+
+    if (parameter.paramType == 'path') {
+      parameter.required = true;
+    }
+  };
+
   var forEachParameterInFile = function (fileObj, callback) {
     fileObj.apis.forEach(function(api) {
       api.operations.forEach(function (op) {
@@ -65,6 +77,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       delete(param.type);
       delete(param.format);
     });
+
+    //trigger validations for each parameterType
+    forEachParameterInFile(fileObj, function(param) {
+      $scope.paramTypeChanged(param);
+    });
+
 
     //update human-readable types
     var friendlyTypes = [];
@@ -104,6 +122,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       exportJSON(newValue);
     }
   }, true);
+
 
 //  $timeout(function() {
 //    window.swagger = new SwaggerApi({
