@@ -41,48 +41,62 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     }
   };
 
-  var forEachParameterInFile = function (fileObj, callback) {
+  var forEachItemInFile = function (fileObj, callbacks) {
     fileObj.apis.forEach(function(api) {
+      if (callbacks.hasOwnProperty('api')) {
+        callbacks.api(api);
+      }
       api.operations.forEach(function (op) {
+        if (callbacks.hasOwnProperty('operation')) {
+          callbacks.operation(op);
+        }
         op.parameters.forEach(function (param) {
-          callback(param);
+          if (callbacks.hasOwnProperty('parameter')) {
+            callbacks.parameter(param);
+          }
         });
       });
     });
   };
 
   var importFileObject = function(fileObj) {
-    allTypes = primitiveTypes;
-    allTypes['File'] = {type: 'File'};
+    allTypes = {};
+
+    angular.extend(allTypes,
+      { 'void': { type: 'void' } },
+      primitiveTypes,
+      { 'File': { type: 'File' } }
+    );
+
     //add model names to our allTypes list
     for (var model in fileObj.models) {
       allTypes[model] = {type: model};
     }
 
-    //replace type and format with friendlyType
-    forEachParameterInFile(fileObj, function(param) {
+    //used for operation.type and parameter.type
+    var replaceTypeAndFormatWithFriendlyType = function(obj) {
       var newName = null;
       for (var name in allTypes) {
-        if (allTypes[name].type == param.type &&
-          allTypes[name].format == param.format) {
+        if (allTypes[name].type == obj.type &&
+          allTypes[name].format == obj.format) {
           newName = name;
           break;
         }
       }
       if (!newName) {
-        console.log("hmm no match for " + param.type);
+        console.log("hmm no match for " + obj.type);
       } else {
-        param.__friendlyType = newName;
+        obj.__friendlyType = newName;
       }
-      delete(param.type);
-      delete(param.format);
-    });
+      delete(obj.type);
+      delete(obj.format);
+    };
 
-    //trigger validations for each parameterType
-    forEachParameterInFile(fileObj, function(param) {
-      $scope.paramTypeChanged(param);
+    //replace type and format with friendlyType
+    forEachItemInFile(fileObj, {
+      operation: replaceTypeAndFormatWithFriendlyType,
+      parameter: replaceTypeAndFormatWithFriendlyType
     });
-
 
     //update human-readable types
     var friendlyTypes = [];
@@ -101,18 +115,24 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   var exportJSON = function(originalFileObj) {
     var fileObj = angular.copy(originalFileObj);
 
-    //replace friendlyType with correct type && format
-    forEachParameterInFile(fileObj, function(param) {
-      if (param.hasOwnProperty('__friendlyType')) {
-        param.type = allTypes[param.__friendlyType].type;
-        if (allTypes[param.__friendlyType].hasOwnProperty('format')) {
-          param.format = allTypes[param.__friendlyType].format;
+    var revertBackToTypeAndFormat = function(obj) {
+      if (obj.hasOwnProperty('__friendlyType')) {
+        obj.type = allTypes[obj.__friendlyType].type;
+        if (allTypes[obj.__friendlyType].hasOwnProperty('format')) {
+          obj.format = allTypes[obj.__friendlyType].format;
         }
-        delete(param.__friendlyType);
+        delete(obj.__friendlyType);
       } else {
         console.log("Something went wrong. Expected to find and replace __friendlyType.")
       }
+    };
+
+    //replace friendlyType with correct type && format
+    forEachItemInFile(fileObj, {
+      operation: revertBackToTypeAndFormat,
+      parameter: revertBackToTypeAndFormat
     });
+
     $scope.fileContents = $filter('json')(fileObj);
   };
 

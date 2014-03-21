@@ -13,6 +13,7 @@
               <span class="path" editable-text="api.path">{{api.path}}</span>
               <span class="summary" editable-text="operation.summary">{{operation.summary}}</span>
             </div>
+            <div class="type" editable-select="operation.__friendlyType" e-ng-options="type for type in friendlyTypes">{{operation.__friendlyType}}</div>
 
             <table class="parameters">
               <thead>
@@ -27,9 +28,9 @@
               </thead>
               <tbody>
                 <tr ng-repeat="parameter in operation.parameters">
-                  <td><select type="select" ng-model="parameter.paramType" ng-change="paramTypeChanged(parameter)" ng-options="pt for pt in paramTypes" ></select></td>
+                  <td><select ng-model="parameter.paramType" ng-change="paramTypeChanged(parameter)" ng-options="pt for pt in paramTypes" ></select></td>
                   <td editable-text="parameter.description">{{parameter.description}}</td>
-                  <td editable-select="parameter.__friendlyType" e-ng-options="type for type in friendlyTypes">{{parameter.__friendlyType}}</td>
+                  <td editable-select="parameter.__friendlyType" e-ng-options="type for type in friendlyTypes | filter:'!void'">{{parameter.__friendlyType}}</td>
                   <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
                   <td editable-text="parameter.name">{{parameter.name}}</td>
                   <td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
