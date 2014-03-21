@@ -17,21 +17,21 @@
             <table class="parameters">
               <thead>
                 <tr>
-                  <td>Name</td>
-                  <td>Description</td>
-                  <td>Required</td>
-                  <td>Type</td>
                   <td>Param Type</td>
+                  <td>Description</td>
+                  <td>Type</td>
+                  <td>Required</td>
+                  <td>Name</td>
                   <td>Allow Multiple</td>
                 </tr>
               </thead>
               <tbody>
                 <tr ng-repeat="parameter in operation.parameters">
-                  <td editable-text="parameter.name">{{parameter.name}}</td>
-                  <td editable-text="parameter.description">{{parameter.description}}</td>
-                  <td editable-checkbox="parameter.required">{{parameter.required}}</td>
-                  <td editable-select="parameter.__friendlyType" e-ng-options="type for type in friendlyTypes">{{parameter.__friendlyType}}</td>
                   <td editable-select="parameter.paramType" e-ng-options="pt for pt in paramTypes">{{parameter.paramType}}</td>
+                  <td editable-text="parameter.description">{{parameter.description}}</td>
+                  <td editable-select="parameter.__friendlyType" e-ng-options="type for type in friendlyTypes">{{parameter.__friendlyType}}</td>
+                  <td editable-checkbox="parameter.required">{{parameter.required}}</td>
+                  <td editable-text="parameter.name">{{parameter.name}}</td>
                   <td editable-checkbox="parameter.allowMultiple">{{parameter.allowMultiple}}</td>
                 </tr>
               </tbody>
