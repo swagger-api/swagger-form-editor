@@ -98,6 +98,11 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       parameter: replaceTypeAndFormatWithFriendlyType
     });
 
+    //trigger validations for each parameterType
+    forEachItemInFile(fileObj, {
+      parameter: $scope.paramTypeChanged
+    });
+    
     //update human-readable types
     var friendlyTypes = [];
     for (var typeName in allTypes) {
