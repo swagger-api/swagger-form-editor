@@ -5,7 +5,8 @@ var app = angular.module('swaggerEditorApp', [
   'ngResource',
   'ngSanitize',
   'ngRoute',
-  'ui.ace'
+  'ui.ace',
+  'xeditable'
 ]);
 
 app.config(function ($routeProvider) {

@@ -4,10 +4,43 @@
 
   <div class="items">
     <h2>APIs</h2>
-    <ul>
-      <li ng-repeat="resource in file.apis">
-        <input type="text" class="box" ng-model="resource.path" />
+    <ul class="apis">
+      <li ng-repeat="api in file.apis">
+        <ul class="operations">
+          <li ng-repeat="operation in api.operations">
+            <div class="heading">
+              <span class="method" editable-select="operation.method" e-ng-options="m for m in methods">{{operation.method}}</span>
+              <span class="path" editable-text="api.path">{{api.path}}</span>
+              <span class="summary" editable-text="operation.summary">{{operation.summary}}</span>
+            </div>
+
+            <table class="parameters">
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Description</td>
+                  <td>Required</td>
+                  <td>Type</td>
+                  <td>Param Type</td>
+                  <td>Allow Multiple</td>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat="parameter in operation.parameters">
+                  <td editable-text="parameter.name">{{parameter.name}}</td>
+                  <td editable-text="parameter.description">{{parameter.description}}</td>
+                  <td editable-checkbox="parameter.required">{{parameter.required}}</td>
+                  <td editable-select="parameter.__friendlyType" e-ng-options="type for type in friendlyTypes">{{parameter.__friendlyType}}</td>
+                  <td editable-select="parameter.paramType" e-ng-options="pt for pt in paramTypes">{{parameter.paramType}}</td>
+                  <td editable-checkbox="parameter.allowMultiple">{{parameter.allowMultiple}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </li>
+        </ul>
+
       </li>
+
     </ul>
   </div>
 
