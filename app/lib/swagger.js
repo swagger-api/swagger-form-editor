@@ -123,8 +123,13 @@ var SwaggerApi = function(url, options) {
   var self = this;
 
   if (options.success != null) {
-    if(options.obj) // use the supplied object
-      this.specFromObject(options.obj, self.selfReflect);
+    if(options.obj) { // use the supplied object
+      var validatedObject = this.specFromObject(options.obj);
+      var processed = this.process(validatedObject, this);
+      setTimeout(function() {
+        self.selfReflect
+      }, 10);
+    }
     else
       this.specFromURL(this.url, self.selfReflect);
   }
@@ -140,15 +145,7 @@ SwaggerApi.prototype.build = function() {
 
 // passes a swagger spec object to the callback
 SwaggerApi.prototype.specFromObject = function(obj, callback, error) {
-  var self = this;
-  if(callback) {
-    var validated = this.validate(obj);
-    var processed = this.process(validated, this);
-    setTimeout(function() {
-      callback(processed)
-    }, 10);
-  }
-  return self;
+  return this.validate(obj);
 }
 
 // passes a swagger spec object to the callback
@@ -158,7 +155,7 @@ SwaggerApi.prototype.specFromURL = function(url, callback) {
   var listing = function() {
     var obj = {
       useJQuery: self.useJQuery,
-      url: self.url,
+      url: url,
       method: "get",
       headers: {
         accept: "application/json"
@@ -452,6 +449,9 @@ SwaggerApi.prototype.process = function(spec, parent) {
   parent.basePath = spec.basePath;
 
   var i;
+  if(!spec.apiDeclarations) {
+    console.log("why!");
+  }
   for(i = 0; i < spec.apiDeclarations.length; i++) {
     var api = spec.apiDeclarations[i];
     var name = api.resourcePath.replace(/\//g, '');
