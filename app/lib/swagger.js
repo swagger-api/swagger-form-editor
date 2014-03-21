@@ -884,6 +884,7 @@ SwaggerOperation.prototype.pathXml = function() {
 
 SwaggerOperation.prototype.encodePathParam = function(pathParam) {
   var encParts, part, parts, _i, _len;
+  pathParam = pathParam.toString();
   if (pathParam.indexOf("/") === -1) {
     return encodeURIComponent(pathParam);
   } else {
@@ -906,6 +907,11 @@ SwaggerOperation.prototype.urlify = function(args) {
       if(args[param.name]) {
         // apply path params and remove from args
         var reg = new RegExp('\{' + param.name + '[^\}]*\}', 'gi');
+        console.log('original url');
+        console.log(url);
+        console.log(param.name);
+        console.log(args[param.name]);
+        console.log(this.encodePathParam("hi"));
         url = url.replace(reg, this.encodePathParam(args[param.name]));
         delete args[param.name];
       }
