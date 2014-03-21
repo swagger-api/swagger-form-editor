@@ -134,7 +134,7 @@ var SwaggerApi = function(url, options) {
 // legacy support
 SwaggerApi.prototype.build = function() {
   var self = this;
-  this.selfReflect(self);
+  this.selfReflect(self, self);
   return;
 };
 
@@ -210,8 +210,7 @@ SwaggerApi.prototype.specFromURL = function(url, callback) {
                     if(responses === expectedCount) {
                       delete resourceListing.apis;
                       var validated = self.validate(resourceListing);
-                      var processed = self.process(validated, self);
-                      callback(processed, self);
+                      callback(validated, self);
                     }
                   },
                   error: function(response) {
@@ -514,7 +513,10 @@ SwaggerApi.prototype.buildFromSpec = function(response) {
   return this;
 };
 
-SwaggerApi.prototype.selfReflect = function(obj) {
+SwaggerApi.prototype.selfReflect = function(obj, parent) {
+  if(obj.apiDeclarations && parent) {
+    obj = parent.process(obj, parent);
+  }
   if (obj.apis == null)
     return false;
   for (resource_name in obj.apis) {
@@ -1187,7 +1189,7 @@ SwaggerOperation.prototype.urlify = function(args) {
       if(args[param.name]) {
         // apply path params and remove from args
         var reg = new RegExp('\{' + param.name + '[^\}]*\}', 'gi');
-        url = url.replace(reg, encodePathParam(args[param.name]));
+        url = url.replace(reg, this.encodePathParam(args[param.name].toString()));
         delete args[param.name];
       }
       else
