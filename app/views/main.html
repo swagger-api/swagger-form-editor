@@ -9,8 +9,11 @@
         <div class="heading error" ng-if="api.operations.length == 0">
           <span class="method"></span>
           <span class="path">{{api.path}}</span>
-          <span class="summary">has zero operations. Delete resource?</span>
+          <span class="summary">API has zero operations. Delete resource?</span>
           <a ng-click="removeFromArrayByIndex(file.apis, $index)">X</a>
+        </div>
+        <div ng-if="api.operations.length == 0">
+          <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
         </div>
         <ul class="operations">
           <li ng-repeat="operation in api.operations">
@@ -47,6 +50,9 @@
                 </tr>
               </tbody>
             </table>
+            <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
+            <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
+
           </li>
         </ul>
 

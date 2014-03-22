@@ -142,8 +142,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     return fileObj;
   };
 
-
-
   var exportJSON = function(originalFileObj) {
     console.log("export");
     var fileObj = angular.copy(originalFileObj);
@@ -201,6 +199,32 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $scope.removeFromArrayByIndex = function(arr, index) {
     arr.splice(index, 1);
   };
+
+  $scope.newParameter = function(parameters) {
+    parameters.push(          {
+      "name": "(name)",
+      "description": "(description)",
+      "defaultValue": "",
+      "required": false,
+      "__friendlyType": "integer",
+      "paramType": "path",
+      "allowMultiple": false
+    });
+  };
+
+  $scope.newOperationAfterIndex = function(api, opIndex) {
+    api.operations.splice(opIndex + 1, 0, {
+//      __class: "new",
+      "method": "GET",
+      "summary": "(summary)",
+      "nickname": "(nickname)",
+      "parameters": [],
+      "type": "void"
+    });
+  };
+
+  //      "path": "HI",
+//  "operations": [],
 
 //  $timeout(function() {
 //    window.swagger = new SwaggerApi({
