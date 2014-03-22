@@ -75,22 +75,41 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
     //used for operation.type and parameter.type
     var replaceTypeAndFormatWithFriendlyType = function(obj) {
-      var newName = null;
-      for (var name in allTypes) {
-        if (allTypes[name].type == obj.type &&
-          allTypes[name].format == obj.format) {
-          newName = name;
-          break;
+
+      var getFriendlyTypeAndDeleteOriginal = function(obj) {
+        var newName = null;
+
+        for (var name in allTypes) {
+          if (allTypes[name].type == obj.type &&
+            allTypes[name].format == obj.format) {
+            newName = name;
+            break;
+          }
         }
-      }
-      if (!newName) {
-        console.log("hmm no match for " + obj.type);
+        if (!newName) {
+          console.log("hmm no match for " + obj.type);
+        }
+        delete(obj.type);
+        delete(obj.format);
+
+        return newName;
+      };
+
+      if (obj.hasOwnProperty('items')) {
+        if (obj.items.hasOwnProperty('type')) {
+          obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj.items);
+        } else {
+          obj.__friendlyType = obj.items['$ref'];
+        }
+        obj.__array = true;
+        delete(obj.type);
+        delete(obj.items);
       } else {
-        obj.__friendlyType = newName;
+        obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj);
       }
-      delete(obj.type);
-      delete(obj.format);
     };
+
+
 
     //replace type and format with friendlyType
     forEachItemInFile(fileObj, {
@@ -113,7 +132,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
     $scope.friendlyTypes = friendlyTypes;
     $scope.file = fileObj;
-    $scope.fileContents = $filter('json')(fileObj);
+    $scope.fileContents = JSON.stringify(fileObj, null, 2);
 
   };
 
@@ -121,10 +140,31 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     var fileObj = angular.copy(originalFileObj);
 
     var revertBackToTypeAndFormat = function(obj) {
+
+      var setTypeAndFormat = function(obj, friendlyType) {
+        obj.type = allTypes[friendlyType].type;
+        if (allTypes[friendlyType].hasOwnProperty('format')) {
+          obj.format = allTypes[friendlyType].format;
+        }
+      };
+
+      if (obj.__friendlyType == 'void') {
+        delete(obj.__array);
+      }
+
       if (obj.hasOwnProperty('__friendlyType')) {
-        obj.type = allTypes[obj.__friendlyType].type;
-        if (allTypes[obj.__friendlyType].hasOwnProperty('format')) {
-          obj.format = allTypes[obj.__friendlyType].format;
+        if (obj.hasOwnProperty('__array') && obj['__array']) {
+          obj.type = 'array';
+
+          if (obj.__friendlyType[0] >= 'A' && obj.__friendlyType[0] <= 'Z') {
+            obj.items = {'$ref': obj.__friendlyType};
+          } else {
+            obj.items = {};
+            setTypeAndFormat(obj.items, obj.__friendlyType);
+          }
+          delete(obj.__array);
+        } else {
+          setTypeAndFormat(obj, obj.__friendlyType);
         }
         delete(obj.__friendlyType);
       } else {
@@ -138,7 +178,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       parameter: revertBackToTypeAndFormat
     });
 
-    $scope.fileContents = $filter('json')(fileObj);
+    $scope.fileContents = JSON.stringify(fileObj, null, 2);
   };
 
   //listen for changes from ng-model in the rows on the left panel of the view

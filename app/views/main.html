@@ -13,7 +13,8 @@
               <span class="path" editable-text="api.path">{{api.path}}</span>
               <span class="summary" editable-text="operation.summary">{{operation.summary}}</span>
             </div>
-            <div class="type" editable-select="operation.__friendlyType" e-ng-options="type for type in friendlyTypes">{{operation.__friendlyType}}</div>
+            <div class="type" editable-select="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" e-ng-options="type for type in friendlyTypes">{{operation.__friendlyType}}</div>
+            <input type="checkbox" ng-hide="operation.__friendlyType == 'void'" ng-model="operation.__array">array?
 
             <table class="parameters">
               <thead>
