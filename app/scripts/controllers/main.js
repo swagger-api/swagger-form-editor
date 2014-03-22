@@ -198,6 +198,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     }
   }, true);
 
+  $scope.removeFromArrayByIndex = function(arr, index) {
+    arr.splice(index, 1);
+  };
 
 //  $timeout(function() {
 //    window.swagger = new SwaggerApi({
