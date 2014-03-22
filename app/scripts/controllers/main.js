@@ -1,7 +1,6 @@
 'use strict';
 
 app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
-  $scope.items = ['/path1', '/path2'];
   $scope.file = null;
   $scope.fileContents = "";
   $http.get('/data/pet-data.json').success(function(obj) {
@@ -29,18 +28,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.friendlyTypes = [];
 
-  $scope.paramTypeChanged = function(parameter) {
-    if (['query', 'header', 'path'].indexOf(parameter.paramType) > -1) {
-      parameter.allowMultiple = parameter.allowMultiple || false;
-    } else {
-      delete (parameter.allowMultiple);
-    }
-
-    if (parameter.paramType == 'path') {
-      parameter.required = true;
-    }
-  };
-
   var forEachItemInFile = function (fileObj, callbacks) {
     fileObj.apis.forEach(function(api) {
       if (callbacks.hasOwnProperty('api')) {
@@ -60,6 +47,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   };
 
   var importFileObject = function(fileObj) {
+    console.log("importing");
     allTypes = {};
 
     angular.extend(allTypes,
@@ -116,11 +104,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       operation: replaceTypeAndFormatWithFriendlyType,
       parameter: replaceTypeAndFormatWithFriendlyType
     });
-
-    //trigger validations for each parameterType
-    forEachItemInFile(fileObj, {
-      parameter: $scope.paramTypeChanged
-    });
     
     //update human-readable types
     var friendlyTypes = [];
@@ -136,7 +119,33 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   };
 
+  var cleanUpFileObject = function(originalFileObj) {
+    var fileObj = angular.copy(originalFileObj);
+
+    var paramTypeChanged = function(parameter) {
+      if (['query', 'header', 'path'].indexOf(parameter.paramType) > -1) {
+        parameter.allowMultiple = parameter.allowMultiple || false;
+      } else {
+        delete (parameter.allowMultiple);
+      }
+
+      if (parameter.paramType == 'path') {
+        parameter.required = true;
+      }
+    };
+
+    //trigger validations for each parameterType
+    forEachItemInFile(fileObj, {
+      parameter: paramTypeChanged
+    });
+
+    return fileObj;
+  };
+
+
+
   var exportJSON = function(originalFileObj) {
+    console.log("export");
     var fileObj = angular.copy(originalFileObj);
 
     var revertBackToTypeAndFormat = function(obj) {
@@ -184,6 +193,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   //listen for changes from ng-model in the rows on the left panel of the view
   $scope.$watch('file', function(newValue) {
     if (newValue != null) {
+      $scope.file = cleanUpFileObject(newValue);
       exportJSON(newValue);
     }
   }, true);
