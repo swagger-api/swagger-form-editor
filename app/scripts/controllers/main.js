@@ -29,17 +29,17 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $scope.friendlyTypes = [];
 
   var forEachItemInFile = function (fileObj, callbacks) {
-    fileObj.apis.forEach(function(api) {
+    fileObj.apis.forEach(function(api, apiIndex, apis) {
       if (callbacks.hasOwnProperty('api')) {
-        callbacks.api(api);
+        callbacks.api(api, apiIndex, apis);
       }
-      api.operations.forEach(function (op) {
+      api.operations.forEach(function (op, opIndex, ops) {
         if (callbacks.hasOwnProperty('operation')) {
-          callbacks.operation(op);
+          callbacks.operation(op, opIndex, ops, api, apiIndex, apis);
         }
-        op.parameters.forEach(function (param) {
+        op.parameters.forEach(function (param, paramIndex, params) {
           if (callbacks.hasOwnProperty('parameter')) {
-            callbacks.parameter(param);
+            callbacks.parameter(param, paramIndex, params);
           }
         });
       });
@@ -104,7 +104,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       operation: replaceTypeAndFormatWithFriendlyType,
       parameter: replaceTypeAndFormatWithFriendlyType
     });
-    
+
+    //add a __path to each operation
+    forEachItemInFile(fileObj, {
+      operation: function(op, opIndex, ops, api) {
+        op.__path = api.path;
+      }
+    });
     //update human-readable types
     var friendlyTypes = [];
     for (var typeName in allTypes) {
@@ -134,11 +140,64 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       }
     };
 
+    var checkIfOperationPathChanged = function(op, opIndex, ops, api, apiIndex, apis) {
+      if (op.__path !== api.path) {
+        if (ops.length == 1) {
+          //if the only operation in api, rename whole api
+          //if api name conflict, will be merged later during cleanUpFileObject
+          api.path = op.__path;
+        } else {
+          //otherwise, we have to create a new api below this api
+          //and move this operation to there.  The new api
+          // will later merge with existing api if necessary during cleanUpFileObject
+          apis.splice(apiIndex + 1, 0, {
+            path: op.__path,
+            operations: [op]
+          });
+          ops.splice(opIndex, 1);
+        }
+      }
+    };
+
+    var mergeOperationsForDuplicateAPIsIntoOneAPI = function() {
+      var mergeDuplicateItemsInArrayByKey = function(array, keyName, subArray) {
+        var values = {};
+        array.forEach(function (item, i) {
+          values[item[keyName]] = values[item[keyName]] || [];
+          values[item[keyName]].push(i);
+        });
+
+        if (array.length != Object.keys(values).length) {
+          for (var name in values) {
+            //if we have duplicates in array for given keyName
+            if (values.hasOwnProperty(name) && values[name].length > 1) {
+              //then for each duplicate,
+              for (var i = 1; i < values[name].length; i++) {
+                //copy elements from duplicate's subarray to first one
+                array[values[name][0]][subArray] = array[values[name][0]][subArray].concat(array[values[name][i]][subArray]);
+                delete(array[values[name][i]]);
+              }
+            }
+          }
+          //clean up deleted elements
+          for (var i = array.length; i >= 0; i--) {
+            if (!array[i]) {
+              array.splice(i, 1);
+            }
+          }
+        }
+      };
+      mergeDuplicateItemsInArrayByKey(fileObj.apis, 'path', 'operations');
+    };
+
     //trigger validations for each parameterType
     forEachItemInFile(fileObj, {
-      parameter: paramTypeChanged
+      parameter: paramTypeChanged,
+      operation: checkIfOperationPathChanged
     });
 
+    //merge methods with the same path into one
+    mergeOperationsForDuplicateAPIsIntoOneAPI();
     return fileObj;
   };
 
@@ -185,6 +244,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       parameter: revertBackToTypeAndFormat
     });
 
+    //remove __path
+    forEachItemInFile(fileObj, {
+      operation: function(op) {
+        delete(op.__path);
+      }
+    });
+
     $scope.fileContents = JSON.stringify(fileObj, null, 2);
   };
 
@@ -219,7 +285,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "summary": "(summary)",
       "nickname": "(nickname)",
       "parameters": [],
-      "type": "void"
+      "__friendlyType": "void",
+      "__path": api.path
     });
   };
 
