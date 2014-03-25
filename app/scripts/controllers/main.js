@@ -140,7 +140,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       }
     };
 
-    var checkIfOperationPathChanged = function(op, opIndex, ops, api, apiIndex, apis) {
+    //check if path changed or return type
+    var checkIfOperationPropertiesChanged = function(op, opIndex, ops, api, apiIndex, apis) {
       if (op.__path !== api.path) {
         if (ops.length == 1) {
           //if the only operation in api, rename whole api
@@ -156,6 +157,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
           });
           ops.splice(opIndex, 1);
         }
+      }
+      if (op.__friendlyType == 'void') {
+        delete(op.__array);
       }
     };
 
@@ -193,7 +197,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     //trigger validations for each parameterType
     forEachItemInFile(fileObj, {
       parameter: paramTypeChanged,
-      operation: checkIfOperationPathChanged
+      operation: checkIfOperationPropertiesChanged
     });
 
     //merge methods with the same path into one
@@ -213,10 +217,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
           obj.format = allTypes[friendlyType].format;
         }
       };
-
-      if (obj.__friendlyType == 'void') {
-        delete(obj.__array);
-      }
 
       if (obj.hasOwnProperty('__friendlyType')) {
         if (obj.hasOwnProperty('__array') && obj['__array']) {
@@ -244,10 +244,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       parameter: revertBackToTypeAndFormat
     });
 
-    //remove __path
+    //remove private properties
     forEachItemInFile(fileObj, {
       operation: function(op) {
         delete(op.__path);
+        delete(op.__open);
+      }, parameter: function(param) {
+        delete(param.__changed);
       }
     });
 
@@ -274,8 +277,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "required": false,
       "__friendlyType": "integer",
       "paramType": "path",
-      "allowMultiple": false
+      "allowMultiple": false,
+      "__changed": true
     });
+  };
+
+  $scope.headingClicked = function(operation) {
+    operation.__open = !operation.__open;
   };
 
   $scope.newOperationAfterIndex = function(api, opIndex) {
@@ -286,7 +294,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "nickname": "(nickname)",
       "parameters": [],
       "__friendlyType": "void",
-      "__path": api.path
+      "__path": api.path,
+      "__open": true
     });
   };
 

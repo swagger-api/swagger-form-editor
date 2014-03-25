@@ -1,3 +1,7 @@
+<div class="panel editor">
+  <div ui-ace="{mode: 'json'}" readonly="true" ng-model="fileContents"></div>
+</div>
+
 <div class="panel">
   <h1>Resource</h1>
   <input type="text" class="box" ng-model="file.resourcePath" />
@@ -5,7 +9,7 @@
   <div class="items">
     <h2>APIs</h2>
     <ul class="apis">
-      <li ng-repeat="api in file.apis">
+      <li ng-repeat="api in file.apis track by api.path">
         <div class="heading error" ng-if="api.operations.length == 0">
           <span class="method"></span>
           <span class="path">{{api.path}}</span>
@@ -16,42 +20,59 @@
           <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
         </div>
         <ul class="operations">
-          <li ng-repeat="operation in api.operations">
-            <div class="heading">
-              <span class="method" editable-select="operation.method" e-ng-options="m for m in methods">{{operation.method}}</span>
-              <span class="path" editable-text="operation.__path">{{operation.__path}}</span>
-              <span class="summary" editable-text="operation.summary">{{operation.summary}}</span>
-              <a ng-click="removeFromArrayByIndex(api.operations, $index)">X</a>
+          <li ng-repeat="operation in api.operations track by $index">
+            <div class="right-menu">
+              <a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>
             </div>
-            <div class="type" editable-select="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" e-ng-options="type for type in friendlyTypes">{{operation.__friendlyType}}</div>
-            <input type="checkbox" ng-hide="operation.__friendlyType == 'void'" ng-model="operation.__array">array?
+            <div class="heading" ng-click="headingClicked(operation)">
 
-            <table class="parameters">
-              <thead>
-                <tr>
-                  <td>Param Type</td>
-                  <td>Description</td>
-                  <td>Type</td>
-                  <td>Required</td>
-                  <td>Name</td>
-                  <td>Allow Multiple</td>
-                  <td></td>
-                </tr>
-              </thead>
-              <tbody>
-                <tr ng-repeat="parameter in operation.parameters">
-                  <td><select ng-model="parameter.paramType" ng-options="pt for pt in paramTypes" ></select></td>
-                  <td editable-text="parameter.description">{{parameter.description}}</td>
-                  <td editable-select="parameter.__friendlyType" e-ng-options="type for type in friendlyTypes | filter:'!void'">{{parameter.__friendlyType}}</td>
-                  <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
-                  <td editable-text="parameter.name">{{parameter.name}}</td>
-                  <td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
-                  <td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">X</a></td>
-                </tr>
-              </tbody>
-            </table>
-            <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
-            <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
+              <select ng-if="operation.__open" ng-model="operation.method" ng-options="m for m in methods"></select>
+              <span ng-if="!operation.__open">{{operation.method}}</span>
+              <span class="path" editable-text="operation.__path">{{operation.__path}}</span>
+              <input ng-if="operation.__open" type="text" class="summary" ng-model="operation.summary" />
+              <span ng-if="!operation.__open" class="summary">{{operation.summary}}</span>
+            </div>
+
+            <div class="edit" ng-if="operation.__open">
+              Return type: <select ng-model="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" ng-options="type for type in friendlyTypes"></select>
+
+              <input type="checkbox" ng-disabled="operation.__friendlyType == 'void'" ng-model="operation.__array" />array?
+
+              <table class="parameters">
+                <thead>
+                  <tr>
+                    <td>Param Type</td>
+                    <td>Description</td>
+                    <td>Type</td>
+                    <td>R?</td>
+                    <td>Name</td>
+                    <td>M?</td>
+                    <td></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-class="{changed: parameter.__changed}" ng-repeat="parameter in operation.parameters track by $index">
+                    <td>
+                      <select ng-model="parameter.paramType" ng-options="pt for pt in paramTypes" ></select>
+                    </td>
+                    <td>
+                      <input type="text" ng-model="parameter.description"/>
+                    </td>
+                    <td>
+                      <select ng-model="parameter.__friendlyType" ng-options="type for type in friendlyTypes | filter:'!void'"></select>
+                    </td>
+                    <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
+                    <td>
+                      <input type="text" ng-model="parameter.name"/>
+                    </td>
+                    <td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
+                    <td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a></td>
+                  </tr>
+                </tbody>
+              </table>
+              <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
+              <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
+            </div>
 
           </li>
         </ul>
@@ -70,7 +91,4 @@
     </ul>
   </div>
 
-</div>
-<div class="panel">
-  <div ui-ace="{mode: 'json'}" readonly="true" ng-model="fileContents"></div>
 </div>
