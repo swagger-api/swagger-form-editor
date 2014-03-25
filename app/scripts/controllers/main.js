@@ -44,6 +44,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         });
       });
     });
+
+    if (callbacks.hasOwnProperty('model')) {
+      for (var modelName in fileObj.models) {
+        callbacks.model(fileObj.models[modelName], modelName, fileObj.models);
+      }
+    }
   };
 
   var importFileObject = function(fileObj) {
@@ -105,10 +111,19 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       parameter: replaceTypeAndFormatWithFriendlyType
     });
 
-    //add a __path to each operation
+    //add a __path to each operation object, __id to model, and __name to each property object
     forEachItemInFile(fileObj, {
       operation: function(op, opIndex, ops, api) {
         op.__path = api.path;
+      },
+      model: function(model, modelName, models) {
+        model.__id = model.id;
+        var i = 1;
+        for (var propertyName in model.properties) {
+          model.properties[propertyName].__name = propertyName;
+          model.properties[propertyName].__storedName = propertyName;
+          model.properties[propertyName].__order = i++;
+        }
       }
     });
     //update human-readable types
@@ -163,6 +178,74 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       }
     };
 
+    //check if model properties changed
+    var checkIfModelPropertiesChanged = function(model, modelName, models) {
+      var renameKey = function(obj, newPropertyName, oldPropertyName) {
+        obj[newPropertyName] = obj[oldPropertyName];
+        delete obj[oldPropertyName];
+      };
+
+      var uniqueName = function(name, obj) {
+        var randomName = name + Math.random() * 1000;
+        if (obj.hasOwnProperty(randomName)) {
+          return uniqueName(name, obj);
+        } else {
+          return randomName;
+        }
+      };
+
+      /* great for model.id or property.name to avoid duplicates */
+      var renameObjectKeyWithNewName = function(object, collection, newPropertyName, oldPropertyName) {
+        var newName = object[newPropertyName];
+        //is the object name and user-typed object name different?
+        if (object[oldPropertyName] !== object[newPropertyName]) {
+          console.log(object[oldPropertyName]);
+          console.log(object[newPropertyName]);
+
+
+          //does newName conflict?
+          if (collection.hasOwnProperty(newName)) {
+            //is known duplicate?
+            if (object.__duplicate) {
+              return;
+            } else {
+              newName = uniqueName(object[newPropertyName], collection);
+              object.__duplicate = true;
+            }
+          } else {
+            delete(object.__duplicate);
+          }
+
+          renameKey(collection, newName, object[oldPropertyName]);
+          object[oldPropertyName] = newName;
+        }
+
+        return newName;
+      };
+
+      renameObjectKeyWithNewName(model, models, '__id', 'id');
+
+      //also rename every mention of model in the file (api or another model)
+      //same with the list of models in type dropdown
+      //todo
+
+      /* check each property for new name */
+      for (var propertyName in model.properties) {
+        if (propertyName !== model.properties[propertyName].__name) {
+          var newName = renameObjectKeyWithNewName(model.properties[propertyName], model.properties, '__name', '__storedName');
+
+          //update list of required properties
+          if (model.hasOwnProperty('required')) {
+            model.required.forEach(function(prop, i, requiredArray) {
+              if (prop == propertyName) {
+                requiredArray[i] = newName;
+              }
+            });
+          }
+        }
+      }
+    };
+
     var mergeOperationsForDuplicateAPIsIntoOneAPI = function() {
       var mergeDuplicateItemsInArrayByKey = function(array, keyName, subArray) {
         var values = {};
@@ -197,7 +280,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     //trigger validations for each parameterType
     forEachItemInFile(fileObj, {
       parameter: paramTypeChanged,
-      operation: checkIfOperationPropertiesChanged
+      operation: checkIfOperationPropertiesChanged,
+      model: checkIfModelPropertiesChanged
     });
 
     //merge methods with the same path into one
@@ -249,8 +333,19 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       operation: function(op) {
         delete(op.__path);
         delete(op.__open);
-      }, parameter: function(param) {
+      },
+      parameter: function(param) {
         delete(param.__changed);
+      },
+      model: function(model) {
+        delete(model.__id);
+        delete(model.__duplicate);
+        for (var propertyName in model.properties) {
+          delete(model.properties[propertyName].__order);
+          delete(model.properties[propertyName].__name);
+          delete(model.properties[propertyName].__storedName);
+          delete(model.__duplicate);
+        }
       }
     });
 
@@ -297,6 +392,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "__path": api.path,
       "__open": true
     });
+  };
+
+  $scope.errorsForObject = function(object) {
+    if (object.__duplicate) {
+      return "[Error] Duplicate definition: '" + object.__id + "' already exists.";
+    }
+    return "";
   };
 
   //      "path": "HI",

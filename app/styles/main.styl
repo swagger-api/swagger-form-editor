@@ -37,6 +37,9 @@ h2 {
     padding: 0;
 
     li {
+      .error {
+        background-color: pink;
+      }
     }
   }
 }
@@ -47,31 +50,32 @@ h2 {
   position: absolute;
 }
 
+.heading {
+  border: 1px solid black;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+  padding: 3px 5px;
+
+  &.error {
+    background-color: lightpink;
+  }
+
+  .method {
+    display: inline-block;
+    font-size: 11px;
+    min-width: 40px;
+  }
+
+  .name {
+    display: inline-block;
+    width: 150px;
+  }
+}
+
 ul.apis {
 
   li {
-    .heading {
-      border: 1px solid black;
-      cursor: pointer;
-      font-size: 16px;
-      margin-top: 10px;
-      padding: 3px 5px;
-
-      &.error {
-        background-color: lightpink;
-      }
-
-      .method {
-        display: inline-block;
-        font-size: 11px;
-        min-width: 40px;
-      }
-
-      .path {
-        display: inline-block;
-        width: 150px;
-      }
-    }
 
     ul.operations {
       li {
@@ -114,6 +118,7 @@ ul.apis {
     }
   }
 }
+
 
 /* xeditable */
 
