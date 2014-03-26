@@ -45,11 +45,33 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       });
     });
 
-    if (callbacks.hasOwnProperty('model')) {
-      for (var modelName in fileObj.models) {
+    Object.keys(fileObj.models).forEach(function (modelName) {
+      if (callbacks.hasOwnProperty('model')) {
         callbacks.model(fileObj.models[modelName], modelName, fileObj.models);
       }
+
+      //if we haven't deleted the modelName key, check for properties
+      //don't run forEachItemInFile with callback =  'model' and 'property'
+      // if model may delete key prior to this
+      if (fileObj.models.hasOwnProperty(modelName)) {
+        Object.keys(fileObj.models[modelName].properties).forEach(function (propName) {
+          if (callbacks.hasOwnProperty('property')) {
+            callbacks.property(fileObj.models[modelName].properties[propName], propName, fileObj.models[modelName].properties);
+          }
+        });
+      }
+    });
+  };
+
+  var updateHumanTypes = function() {
+    var friendlyTypes = [];
+    for (var typeName in allTypes) {
+      if (allTypes.hasOwnProperty(typeName)) {
+        friendlyTypes.push(typeName);
+      }
     }
+
+    $scope.friendlyTypes = friendlyTypes;
   };
 
   var importFileObject = function(fileObj) {
@@ -63,8 +85,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     );
 
     //add model names to our allTypes list
-    for (var model in fileObj.models) {
-      allTypes[model] = {type: model};
+    for (var modelName in fileObj.models) {
+      allTypes[modelName] = {type: modelName};
     }
 
     //used for operation.type and parameter.type
@@ -98,6 +120,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         obj.__array = true;
         delete(obj.type);
         delete(obj.items);
+      } else if (obj.hasOwnProperty('$ref')) {
+        obj.__friendlyType = obj['$ref'];
+        delete(obj['$ref']);
       } else {
         obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj);
       }
@@ -108,7 +133,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     //replace type and format with friendlyType
     forEachItemInFile(fileObj, {
       operation: replaceTypeAndFormatWithFriendlyType,
-      parameter: replaceTypeAndFormatWithFriendlyType
+      parameter: replaceTypeAndFormatWithFriendlyType,
+      property: replaceTypeAndFormatWithFriendlyType
     });
 
     //add a __path to each operation object, __id to model, and __name to each property object
@@ -126,15 +152,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         }
       }
     });
-    //update human-readable types
-    var friendlyTypes = [];
-    for (var typeName in allTypes) {
-      if (allTypes.hasOwnProperty(typeName)) {
-        friendlyTypes.push(typeName);
-      }
-    }
 
-    $scope.friendlyTypes = friendlyTypes;
+    updateHumanTypes();
     $scope.file = fileObj;
     $scope.fileContents = JSON.stringify(fileObj, null, 2);
 
@@ -197,33 +216,57 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       /* great for model.id or property.name to avoid duplicates */
       var renameObjectKeyWithNewName = function(object, collection, newPropertyName, oldPropertyName) {
         var newName = object[newPropertyName];
-        //is the object name and user-typed object name different?
-        if (object[oldPropertyName] !== object[newPropertyName]) {
-          console.log(object[oldPropertyName]);
-          console.log(object[newPropertyName]);
 
-
-          //does newName conflict?
-          if (collection.hasOwnProperty(newName)) {
-            //is known duplicate?
-            if (object.__duplicate) {
-              return;
-            } else {
-              newName = uniqueName(object[newPropertyName], collection);
-              object.__duplicate = true;
-            }
+        //does newName conflict?
+        if (collection.hasOwnProperty(newName)) {
+          //is known duplicate?
+          if (object.__duplicate) {
+            return object[oldPropertyName];
           } else {
-            delete(object.__duplicate);
+            newName = uniqueName(object[newPropertyName], collection);
+            object.__duplicate = true;
           }
-
-          renameKey(collection, newName, object[oldPropertyName]);
-          object[oldPropertyName] = newName;
+        } else {
+          delete(object.__duplicate);
         }
+
+        renameKey(collection, newName, object[oldPropertyName]);
+        object[oldPropertyName] = newName;
 
         return newName;
       };
 
-      renameObjectKeyWithNewName(model, models, '__id', 'id');
+      //is the object name and user-typed object name different?
+      if (model.id !== model.__id) {
+        var originalName = model.id;
+        var newName = renameObjectKeyWithNewName(model, models, '__id', 'id');
+
+        if (originalName != newName) {
+          allTypes[newName] = {type: newName};
+          delete (allTypes[originalName]);
+          updateHumanTypes();
+
+          var updateType = function(object) {
+            if (object.hasOwnProperty('__friendlyType') &&
+              object.__friendlyType == originalName) {
+              object.__friendlyType = newName;
+            }
+          };
+
+          //update all saved types
+          forEachItemInFile(fileObj, {
+            parameter: function(parameter) { //parameter type
+              updateType(parameter);
+            },
+            operation: function(op) { //return type
+              updateType(op);
+            },
+            property: function(prop) { //model property type
+              updateType(prop);
+            }
+          });
+        }
+      }
 
       //also rename every mention of model in the file (api or another model)
       //same with the list of models in type dropdown
@@ -294,7 +337,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     var fileObj = angular.copy(originalFileObj);
 
     var revertBackToTypeAndFormat = function(obj) {
-
       var setTypeAndFormat = function(obj, friendlyType) {
         obj.type = allTypes[friendlyType].type;
         if (allTypes[friendlyType].hasOwnProperty('format')) {
@@ -325,7 +367,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     //replace friendlyType with correct type && format
     forEachItemInFile(fileObj, {
       operation: revertBackToTypeAndFormat,
-      parameter: revertBackToTypeAndFormat
+      parameter: revertBackToTypeAndFormat,
+      property: revertBackToTypeAndFormat
     });
 
     //remove private properties
@@ -356,7 +399,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $scope.$watch('file', function(newValue) {
     if (newValue != null) {
       $scope.file = cleanUpFileObject(newValue);
-      exportJSON(newValue);
+      exportJSON($scope.file);
     }
   }, true);
 
