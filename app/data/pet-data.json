@@ -22,7 +22,7 @@
             "name": "body",
             "description": "Pet object that needs to be added to the store",
             "required": true,
-            "type": "Pet",
+            "type": "ParamTypeExample",
             "paramType": "body",
             "allowMultiple": false
           }
@@ -38,7 +38,7 @@
         "method": "PUT",
         "summary": "Update an existing pet",
         "notes": "",
-        "type": "void",
+        "type": "returnTypeExample",
         "nickname": "updatePet",
         "authorizations": {},
         "parameters": [
@@ -77,7 +77,7 @@
         "notes": "Multiple status values can be provided with comma seperated strings",
         "type": "array",
         "items": {
-          "$ref": "Pet"
+          "$ref": "ArrayRefExample"
         },
         "nickname": "findPetsByStatus",
         "authorizations": {},
@@ -202,7 +202,7 @@
             "name": "petId",
             "description": "ID of pet that needs to be updated",
             "required": true,
-            "type": "string",
+            "$ref": "JustRefExample",
             "paramType": "path",
             "allowMultiple": false
           },
@@ -376,7 +376,7 @@
       "tags": {
         "type": "array",
         "items": {
-          "$ref": "Tag"
+          "$ref": "ModelPropertyArray$RefExample"
         }
       },
       "status": {
@@ -390,7 +390,7 @@
     "id": "Category",
     "properties": {
       "id": {
-        "type": "integer",
+        "type": "ModelPropertyTypeExample",
         "format": "int64"
       },
       "name": {

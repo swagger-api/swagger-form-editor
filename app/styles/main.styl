@@ -73,37 +73,34 @@ h2 {
   }
 }
 
-ul.apis {
+.items {
+  ul {
+    li {
+      position: relative;
 
-  li {
+      .right-menu {
+        background-color: white;
+        font-size: 20px;
+        height: 100%;
+        padding-left: 5px;
+        position: absolute;
+        right: -35px;
+        top: 0;
+        width: 30px;
 
-    ul.operations {
-      li {
-        position: relative;
+        a {
+          cursor: pointer;
 
-        .right-menu {
-          background-color: white;
-          font-size: 20px;
-          height: 100%;
-          padding-left: 5px;
-          position: absolute;
-          right: -35px;
-          top: 0;
-          width: 30px;
-
-          a {
-            cursor: pointer;
-
-            &:hover {
-              color: red;
-            }
+          &:hover {
+            color: red;
           }
         }
       }
     }
   }
 
-  table.parameters {
+
+  table {
     thead tr {
       color: #555;
       text-decoration: underline;

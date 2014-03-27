@@ -8,11 +8,13 @@
 
   <div class="items">
     <h2>APIs</h2>
+    <a ng-click="newAPI(file.apis, 0)">New API</a>
+
     <ul class="apis">
-      <li ng-repeat="api in file.apis track by api.path">
+      <li ng-repeat="api in file.apis track by $index">
         <div class="heading error" ng-if="api.operations.length == 0">
           <span class="method"></span>
-          <span class="name">{{api.path}}</span>
+          <span class="name" editable-text="api.path">{{api.path}}</span>
           <span class="summary">API has zero operations. Delete resource?</span>
           <a ng-click="removeFromArrayByIndex(file.apis, $index)">X</a>
         </div>
@@ -25,12 +27,14 @@
             <div class="right-menu">
               <a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>
             </div>
-            <div class="heading" ng-click="headingClicked(operation)">
+            <div class="heading" ng-click="headingClicked(operation, $event)">
 
               <select ng-if="operation.__open" ng-model="operation.method" ng-options="m for m in methods"></select>
               <span ng-if="!operation.__open">{{operation.method}}</span>
               <span class="name" editable-text="operation.__path">{{operation.__path}}</span>
-              <input ng-if="operation.__open" type="text" class="summary" ng-model="operation.summary" />
+              <!--<input ng-if="operation.__open" type="text" class="name" ng-model="operation.__path" />-->
+              <!--<span ng-if="!operation.__open" class="name">{{operation.__path}}</span>-->
+              <input ng-if="operation.__open" type="text" placeholder="summary" class="summary" ng-model="operation.summary" />
               <span ng-if="!operation.__open" class="summary">{{operation.summary}}</span>
             </div>
 
@@ -57,14 +61,14 @@
                       <select ng-model="parameter.paramType" ng-options="pt for pt in paramTypes" ></select>
                     </td>
                     <td>
-                      <input type="text" ng-model="parameter.description"/>
+                      <input type="text" placeholder="description" ng-model="parameter.description"/>
                     </td>
                     <td>
                       <select ng-model="parameter.__friendlyType" ng-options="type for type in friendlyTypes | filter:'!void'"></select>
                     </td>
                     <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
                     <td>
-                      <input type="text" ng-model="parameter.name"/>
+                      <input type="text" placeholder="name" ng-model="parameter.name"/>
                     </td>
                     <td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
                     <td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a></td>
@@ -85,46 +89,51 @@
 
   <div class="items">
     <h2>Models</h2>
+    <a ng-click="newModel(file.models)">New Model</a>
+
     <ul class="models last">
       <li ng-repeat="model in file.models track by $index">
         <div class="right-menu">
-            <!--<a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>-->
+          <a ng-click="removeFromObjectByKey(file.models, model.__id, 'model')">x</a>
         </div>
-        <div class="heading">
+        <div class="heading" ng-click="headingClicked(model, $event)">
           <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
+          <input ng-if="model.__open" type="text" class="summary" placeholder="description" ng-model="model.description" />
+          <span ng-if="!model.__open" class="summary">{{model.description}}</span>
         </div>
 
-        <table class="properties">
-          <thead>
-            <tr>
-              <td>Name</td>
-              <td>Description</td>
-              <td>Type</td>
-              <td>R?</td>
-              <td></td>
-            </tr>
-          </thead>
+        <div class="edit" ng-if="model.__open">
+          <table class="properties">
+            <thead>
+              <tr>
+                <td>Name</td>
+                <td>Description</td>
+                <td>Type</td>
+                <td>Req?</td>
+                <td></td>
+              </tr>
+            </thead>
 
-          <tbody>
-            <tr ng-repeat="property in model.properties | orderByObject track by $index">
-              <td>
-                {{property.__order}}
-                <input type="text" ng-class="{error: property.__duplicate}" title="{{errorsForObject(property)}}" ng-model="property.__name"/>
-              </td>
-              <td>
-                <input type="text" ng-model="property.description"/>
-              </td>
-              <td>
-                <select ng-model="property.__friendlyType" ng-options="type for type in friendlyTypes | filter:'!void'"></select>
-              </td>
-              <!--<td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>-->
-            <!--<td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>-->
-            <!--<td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a></td>-->
-            </tr>
-        </tbody>
-        </table>
-        <!--<a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>-->
-        <!--<a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>-->
+            <tbody>
+              <tr ng-repeat="property in model.properties | orderByObject track by $index">
+                <td>
+                  {{property.__order}}
+                  <input type="text" ng-class="{error: property.__duplicate}" title="{{errorsForObject(property)}}" ng-model="property.__name"/>
+                </td>
+                <td>
+                  <input type="text" ng-model="property.description"/>
+                </td>
+                <td>
+                  <select ng-model="property.__friendlyType" ng-options="type for type in friendlyTypes | filter:'!void'"></select>
+                </td>
+                <!--<td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>-->
+                <!--<td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>-->
+                <td><a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a></td>
+              </tr>
+            </tbody>
+          </table>
+          <a ng-mousedown="newProperty(model.properties)">Add Property</a>
+        </div>
 
 
 

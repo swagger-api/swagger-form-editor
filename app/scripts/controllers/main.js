@@ -74,6 +74,39 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     $scope.friendlyTypes = friendlyTypes;
   };
 
+  //used for creating or renaming a model type, updating dropdown, and calling updateTypesInFile
+  var createNewType = function(fileObj, newName, originalName, deleteOriginal) {
+    allTypes[newName] = {type: newName};
+    if (deleteOriginal) {
+      delete(allTypes[originalName]);
+    }
+    updateHumanTypes();
+    updateTypesInFile(fileObj, newName, originalName);
+  };
+
+  //used for updating model name in types of all kinds
+  var updateTypesInFile = function(fileObj, newName, originalName) {
+    var updateType = function(object) {
+      if (object.hasOwnProperty('__friendlyType') &&
+        object.__friendlyType == originalName) {
+        object.__friendlyType = newName;
+      }
+    };
+
+    //update all saved types
+    forEachItemInFile(fileObj, {
+      parameter: function(parameter) { //parameter type
+        updateType(parameter);
+      },
+      operation: function(op) { //return type
+        updateType(op);
+      },
+      property: function(prop) { //model property type
+        updateType(prop);
+      }
+    });
+  };
+
   var importFileObject = function(fileObj) {
     console.log("importing");
     allTypes = {};
@@ -111,21 +144,42 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         return newName;
       };
 
+      var originalType;
+
       if (obj.hasOwnProperty('items')) {
         if (obj.items.hasOwnProperty('type')) {
+          originalType = obj.items.type;
           obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj.items);
         } else {
+          originalType = obj.items['$ref'];
           obj.__friendlyType = obj.items['$ref'];
+
+          if (!allTypes.hasOwnProperty(obj.__friendlyType)) {
+            obj.__friendlyType = null;
+          }
         }
         obj.__array = true;
         delete(obj.type);
         delete(obj.items);
       } else if (obj.hasOwnProperty('$ref')) {
+        originalType = obj['$ref'];
         obj.__friendlyType = obj['$ref'];
+        if (!allTypes.hasOwnProperty(obj.__friendlyType)) {
+          obj.__friendlyType = null;
+        }
         delete(obj['$ref']);
       } else {
+        originalType = obj.type;
         obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj);
       }
+//      console.log("originalType was " + originalType);
+//      console.log("friendlyType is now " + obj.__friendlyType);
+      if (obj.__friendlyType == null) {
+        var newType = "Missing:" + originalType;
+        obj.__friendlyType = newType;
+        createNewType(fileObj, newType, originalType);
+      }
+
     };
 
 
@@ -133,7 +187,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     //replace type and format with friendlyType
     forEachItemInFile(fileObj, {
       operation: replaceTypeAndFormatWithFriendlyType,
-      parameter: replaceTypeAndFormatWithFriendlyType,
+      parameter: replaceTypeAndFormatWithFriendlyType
+//      property: replaceTypeAndFormatWithFriendlyType
+    });
+
+    //replace type and format with friendlyType
+    forEachItemInFile(fileObj, {
       property: replaceTypeAndFormatWithFriendlyType
     });
 
@@ -242,35 +301,10 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         var newName = renameObjectKeyWithNewName(model, models, '__id', 'id');
 
         if (originalName != newName) {
-          allTypes[newName] = {type: newName};
-          delete (allTypes[originalName]);
-          updateHumanTypes();
+          createNewType(fileObj, newName, originalName, true);
 
-          var updateType = function(object) {
-            if (object.hasOwnProperty('__friendlyType') &&
-              object.__friendlyType == originalName) {
-              object.__friendlyType = newName;
-            }
-          };
-
-          //update all saved types
-          forEachItemInFile(fileObj, {
-            parameter: function(parameter) { //parameter type
-              updateType(parameter);
-            },
-            operation: function(op) { //return type
-              updateType(op);
-            },
-            property: function(prop) { //model property type
-              updateType(prop);
-            }
-          });
         }
       }
-
-      //also rename every mention of model in the file (api or another model)
-      //same with the list of models in type dropdown
-      //todo
 
       /* check each property for new name */
       for (var propertyName in model.properties) {
@@ -338,6 +372,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
     var revertBackToTypeAndFormat = function(obj) {
       var setTypeAndFormat = function(obj, friendlyType) {
+        console.log(friendlyType);
         obj.type = allTypes[friendlyType].type;
         if (allTypes[friendlyType].hasOwnProperty('format')) {
           obj.format = allTypes[friendlyType].format;
@@ -383,12 +418,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       model: function(model) {
         delete(model.__id);
         delete(model.__duplicate);
-        for (var propertyName in model.properties) {
-          delete(model.properties[propertyName].__order);
-          delete(model.properties[propertyName].__name);
-          delete(model.properties[propertyName].__storedName);
-          delete(model.__duplicate);
-        }
+        delete(model.__open);
+      },
+      property: function(property) {
+        delete(property.__order);
+        delete(property.__name);
+        delete(property.__storedName);
+        delete(property.__duplicate);
       }
     });
 
@@ -407,6 +443,15 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     arr.splice(index, 1);
   };
 
+  $scope.removeFromObjectByKey = function(obj, key, kind) {
+    delete(obj[key]);
+
+    if (kind == 'model') {
+      var newType = "Missing:" + key;
+      createNewType($scope.file, newType, key, true);
+    }
+  };
+
   $scope.newParameter = function(parameters) {
     parameters.push(          {
       "name": "(name)",
@@ -420,8 +465,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     });
   };
 
-  $scope.headingClicked = function(operation) {
-    operation.__open = !operation.__open;
+  $scope.headingClicked = function(obj, event) {
+    if (!obj.__open) {
+      obj.__open = true;
+    } else if (event.target.className == 'heading') {
+      obj.__open = false;
+    }
   };
 
   $scope.newOperationAfterIndex = function(api, opIndex) {
@@ -435,6 +484,41 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "__path": api.path,
       "__open": true
     });
+  };
+
+
+  $scope.newAPI = function(apis, index) {
+    var newPath = $scope.file.resourcePath + (Math.random() * 1000 + "").substring(0, 5);
+
+    apis.splice(index, 0, {
+      "path": newPath,
+      "operations": []
+    });
+  };
+
+  $scope.newModel = function(models) {
+    var newModelName = 'Model' + (Math.random() * 1000 + "").substring(0, 5);
+
+    models[newModelName] = {
+      id: newModelName,
+      __id: newModelName,
+      properties: {},
+      __open: true
+    };
+
+    allTypes[newModelName] = {type: newModelName};
+    updateHumanTypes();
+  };
+
+  $scope.newProperty = function(properties) {
+    var newPropertyName = 'prop' + (Math.random() * 1000 + "").substring(0, 5);
+
+    properties[newPropertyName] = {
+      __name: newPropertyName,
+      __storedName: newPropertyName,
+      __friendlyType: 'integer',
+      __order: Object.keys(properties).length + 1
+    };
   };
 
   $scope.errorsForObject = function(object) {
