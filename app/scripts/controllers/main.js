@@ -1,11 +1,14 @@
 'use strict';
 
 app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
+  $scope.doc = null;
+  $scope.files = [];
+  $scope.activeIndex = 0;
+  $scope.remoteURL = "";
+
   $scope.file = null;
   $scope.fileContents = "";
-  $http.get('/data/pet-data.json').success(function(obj) {
-    importFileObject(obj);
-  });
+
   $scope.methods = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'];
   $scope.paramTypes = ['path', 'query', 'body', 'header', 'form'];
 
@@ -33,6 +36,29 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   var allTypes = {};
 
   $scope.friendlyTypes = [];
+
+  //listen for changes from ng-model in the rows on the left panel of the view
+  $scope.$watch('doc', function(newValue) {
+    if (newValue != null) {
+      var file = cleanUpFileObject($scope.files[$scope.activeIndex]);
+
+      //rename missing models to regular if found
+      Object.keys(allTypes).forEach(function(key) {
+        if (allTypes.hasOwnProperty("Missing:" + key)) {
+          //rename missing to the real model name
+          createNewType(file, key, "Missing:" + key, true);
+          //update every file (technically already called for this file)
+          for (var i = 0; i < $scope.files.length; i++) {
+            updateTypesInFile($scope.files[i], key, "Missing:" + key);
+          }
+        }
+      });
+
+      $scope.files[$scope.activeIndex] = file;
+      exportJSON($scope.files[$scope.activeIndex]);
+    }
+  }, true);
+
 
   var forEachItemInFile = function (fileObj, callbacks) {
     fileObj.apis.forEach(function(api, apiIndex, apis) {
@@ -113,21 +139,40 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     });
   };
 
+
+  var importDocFromURL = function(url) {
+    var s = new SwaggerApi(url);
+    s.specFromURL(url, function(doc) {
+
+      console.log("importing");
+      allTypes = {};
+
+      angular.extend(allTypes,
+        { 'void': { type: 'void' } },
+        primitiveTypes,
+        { 'File': { type: 'File' } }
+      );
+
+      $scope.$apply(function() {
+        doc.apiDeclarations.forEach(function (file, i) {
+          doc.apiDeclarations[i] = importFileObject(file);
+
+          //add model names to our allTypes list
+          for (var modelName in file.models) {
+            allTypes[modelName] = {type: modelName};
+          }
+
+        });
+        $scope.doc = doc;
+        $scope.files = $scope.doc.apiDeclarations;
+      });
+    });
+  };
+
+  $scope.remoteURL = "http://petstore.swagger.wordnik.com/api/api-docs";
+  importDocFromURL($scope.remoteURL);
+
   var importFileObject = function(fileObj) {
-    console.log("importing");
-    allTypes = {};
-
-    angular.extend(allTypes,
-      { 'void': { type: 'void' } },
-      primitiveTypes,
-      { 'File': { type: 'File' } }
-    );
-
-    //add model names to our allTypes list
-    for (var modelName in fileObj.models) {
-      allTypes[modelName] = {type: modelName};
-    }
-
     //used for operation.type and parameter.type
     var replaceTypeAndFormatWithFriendlyType = function(obj) {
 
@@ -219,9 +264,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     });
 
     updateHumanTypes();
-    $scope.file = fileObj;
-    $scope.fileContents = JSON.stringify(fileObj, null, 2);
-    // $scope.file.remoteUrl = '/data/pet-data.json';
+
+    return fileObj;
+
   };
 
   var cleanUpFileObject = function(originalFileObj) {
@@ -282,8 +327,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       var renameObjectKeyWithNewName = function(object, collection, newPropertyName, oldPropertyName) {
         var newName = object[newPropertyName];
 
-        //does newName conflict?
-        if (collection.hasOwnProperty(newName)) {
+        //does newName conflict?  Check based on type dropDown
+        if (allTypes.hasOwnProperty(newName)) {
           //is known duplicate?
           if (object.__duplicate) {
             return object[oldPropertyName];
@@ -437,14 +482,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     $scope.fileContents = JSON.stringify(fileObj, null, 2);
   };
 
-  //listen for changes from ng-model in the rows on the left panel of the view
-  $scope.$watch('file', function(newValue) {
-    if (newValue != null) {
-      $scope.file = cleanUpFileObject(newValue);
-      exportJSON($scope.file);
-    }
-  }, true);
-
   $scope.removeFromArrayByIndex = function(arr, index) {
     arr.splice(index, 1);
   };
@@ -453,8 +490,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     delete(obj[key]);
 
     if (kind == 'model') {
-      var newType = "Missing:" + key;
-      createNewType($scope.file, newType, key, true);
+      createNewType($scope.files[$scope.activeIndex], "Missing:" + key, key, true);
     }
   };
 
@@ -534,57 +570,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     return "";
   };
 
-  $scope.loadModel = function(data) {
-    var url = $scope.file.remoteUrl;
-    if(!url)
-      alert("invalid URL");
-    else {
-      loadFromUrl(url);
-    }
+  $scope.clickTab = function(index) {
+    $scope.activeIndex = index;
+    exportJSON($scope.files[$scope.activeIndex]);
+  };
+
+  $scope.deleteResource = function(index) {
+    $scope.files.splice(index, 1);
+    $scope.clickTab($scope.activeIndex > 0 ? $scope.activeIndex - 1 : 0);
   }
-
-  var consolidated = {tony: "true"};
-
-  function getData() {
-    return consolidated;
-  }
-
-  $scope.openInSwaggerUi = function () {
-    console.log("opening in ui");
-    var json = JSON.parse($scope.fileContents);
-    // massage into a consolidated format.  This is a hack for now
-    var consolidated = {
-      "swaggerVersion": "1.2",
-      "apis": [
-        {
-          "path": "http://localhost:8000/invalid",
-          "description": "Generating greetings in our application."
-        }
-      ],
-      "apiDeclarations": []
-    };
-
-    consolidated.apiDeclarations.push(json);
-
-    window.data = consolidated;
-    window.open('views/swagger.html', '_swagger');
-  }
-
-  //      "path": "HI",
-//  "operations": [],
-
-//  $timeout(function() {
-//    window.swagger = new SwaggerApi({
-//      url: "http://petstore.swagger.wordnik.com/api/api-docs",
-//      success: function () {
-//        if (swagger.ready === true) {
-//          // upon connect, fetch a pet and set contents to element "mydata"
-////          swagger.apis.pet.getPetById({petId: 1}, function (data) {
-////            console.log(data.content.data);
-////          });
-//          console.log(swagger);
-//        }
-//      }
-//    });
-//  }, 1000);
 });

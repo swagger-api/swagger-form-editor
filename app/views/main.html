@@ -1,3 +1,9 @@
+<div class="url">{{remoteURL}}</div>
+
+<ul class="tabs">
+  <li ng-repeat="file in files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
+</ul>
+
 <div class="panel editor">
   <input type="text" class="box" ng-model="file.remoteUrl" />
   <a ng-click="loadModel('true')">Load</a>
@@ -7,17 +13,19 @@
 
 <div class="panel">
   <h1>Resource</h1>
-  <input type="text" class="box" ng-model="file.resourcePath" />
+  <input type="text" class="box" ng-model="files[activeIndex].resourcePath" />
+  <a ng-mousedown="deleteResource(activeIndex)">Delete Resource</a>
+
   <div class="items">
     <h2>APIs</h2>
-    <a ng-click="newAPI(file.apis, 0)">New API</a>
+    <a ng-click="newAPI(files[activeIndex].apis, 0)">New API</a>
     <ul class="apis">
-      <li ng-repeat="api in file.apis track by $index">
+      <li ng-repeat="api in files[activeIndex].apis track by $index">
         <div class="heading error" ng-if="api.operations.length == 0">
           <span class="method"></span>
           <span class="name" editable-text="api.path">{{api.path}}</span>
           <span class="summary">API has zero operations. Delete resource?</span>
-          <a ng-click="removeFromArrayByIndex(file.apis, $index)">X</a>
+          <a ng-click="removeFromArrayByIndex(files[activeIndex].apis, $index)">X</a>
         </div>
         <div ng-if="api.operations.length == 0">
           <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
@@ -90,12 +98,12 @@
 
   <div class="items">
     <h2>Models</h2>
-    <a ng-click="newModel(file.models)">New Model</a>
+    <a ng-click="newModel(files[activeIndex].models)">New Model</a>
 
     <ul class="models last">
-      <li ng-repeat="model in file.models track by $index">
+      <li ng-repeat="model in files[activeIndex].models track by $index">
         <div class="right-menu">
-          <a ng-click="removeFromObjectByKey(file.models, model.__id, 'model')">x</a>
+          <a ng-click="removeFromObjectByKey(files[activeIndex].models, model.__id, 'model')">x</a>
         </div>
         <div class="heading" ng-click="headingClicked(model, $event)">
           <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
