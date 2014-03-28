@@ -55,7 +55,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       });
 
       $scope.files[$scope.activeIndex] = file;
-      exportJSON($scope.files[$scope.activeIndex]);
+      $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
     }
   }, true);
 
@@ -416,7 +416,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     return fileObj;
   };
 
-  var exportJSON = function(originalFileObj) {
+  var exportFileObject = function(originalFileObj, format) {
     console.log("export");
     var fileObj = angular.copy(originalFileObj);
 
@@ -478,7 +478,10 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       }
     });
 
-    $scope.fileContents = JSON.stringify(fileObj, null, 2);
+    if (format == 'json') {
+      return JSON.stringify(fileObj, null, 2);
+    }
+    return fileObj;
   };
 
   $scope.removeFromArrayByIndex = function(arr, index) {
@@ -571,7 +574,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.clickTab = function(index) {
     $scope.activeIndex = index;
-    exportJSON($scope.files[$scope.activeIndex]);
+    $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
   };
 
   $scope.deleteResource = function(index) {
@@ -579,39 +582,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     $scope.clickTab($scope.activeIndex > 0 ? $scope.activeIndex - 1 : 0);
   };
 
-  $scope.loadModel = function(data) {
-    var url = $scope.file.remoteUrl;
-    if(!url)
-      alert("invalid URL");
-    else {
-      loadFromUrl(url);
-    }
-  };
-
-  var consolidated = {tony: "true"};
-
-  function getData() {
-    return consolidated;
-  }
-
-  $scope.openInSwaggerUi = function () {
-    console.log("opening in ui");
-    var json = JSON.parse($scope.fileContents);
-    // massage into a consolidated format.  This is a hack for now
-    var consolidated = {
-      "swaggerVersion": "1.2",
-      "apis": [
-        {
-          "path": "http://localhost:8000/invalid",
-          "description": "Generating greetings in our application."
-        }
-      ],
-      "apiDeclarations": []
-    };
-
-    consolidated.apiDeclarations.push(json);
-
-    window.data = consolidated;
+  $scope.openInSwaggerUI = function () {
+    var doc = angular.copy($scope.doc);
+    //replace each resource with exported version (removes internal properties)
+    doc.apiDeclarations.forEach(function(resource, i) {
+      doc.apiDeclarations[i] = exportFileObject(resource);
+    });
+    window.data = doc;
     window.open('views/swagger.html', '_swagger');
   }
 
