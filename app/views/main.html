@@ -1,15 +1,16 @@
 <div class="panel editor">
+  <input type="text" class="box" ng-model="file.remoteUrl" />
+  <a ng-click="loadModel('true')">Load</a>
+  <a ng-click="openInSwaggerUi()">Open in Swagger UI</a>
   <div ui-ace="{mode: 'json'}" readonly="true" ng-model="fileContents"></div>
 </div>
 
 <div class="panel">
   <h1>Resource</h1>
   <input type="text" class="box" ng-model="file.resourcePath" />
-
   <div class="items">
     <h2>APIs</h2>
     <a ng-click="newAPI(file.apis, 0)">New API</a>
-
     <ul class="apis">
       <li ng-repeat="api in file.apis track by $index">
         <div class="heading error" ng-if="api.operations.length == 0">
@@ -134,11 +135,7 @@
           </table>
           <a ng-mousedown="newProperty(model.properties)">Add Property</a>
         </div>
-
-
-
       </li>
     </ul>
   </div>
-
 </div>

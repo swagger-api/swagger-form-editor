@@ -6,9 +6,15 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $http.get('/data/pet-data.json').success(function(obj) {
     importFileObject(obj);
   });
-
   $scope.methods = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'];
   $scope.paramTypes = ['path', 'query', 'body', 'header', 'form'];
+
+  function loadFromUrl(url) {
+    $http.get(url).success(function(obj) {
+      importFileObject(obj);
+      $scope.file.remoteUrl = url;
+    });
+  }
 
   var primitiveTypes = {
     'integer': {type: 'integer'},
@@ -215,7 +221,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     updateHumanTypes();
     $scope.file = fileObj;
     $scope.fileContents = JSON.stringify(fileObj, null, 2);
-
+    // $scope.file.remoteUrl = '/data/pet-data.json';
   };
 
   var cleanUpFileObject = function(originalFileObj) {
@@ -527,6 +533,42 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     }
     return "";
   };
+
+  $scope.loadModel = function(data) {
+    var url = $scope.file.remoteUrl;
+    if(!url)
+      alert("invalid URL");
+    else {
+      loadFromUrl(url);
+    }
+  }
+
+  var consolidated = {tony: "true"};
+
+  function getData() {
+    return consolidated;
+  }
+
+  $scope.openInSwaggerUi = function () {
+    console.log("opening in ui");
+    var json = JSON.parse($scope.fileContents);
+    // massage into a consolidated format.  This is a hack for now
+    var consolidated = {
+      "swaggerVersion": "1.2",
+      "apis": [
+        {
+          "path": "http://localhost:8000/invalid",
+          "description": "Generating greetings in our application."
+        }
+      ],
+      "apiDeclarations": []
+    };
+
+    consolidated.apiDeclarations.push(json);
+
+    window.data = consolidated;
+    window.open('views/swagger.html', '_swagger');
+  }
 
   //      "path": "HI",
 //  "operations": [],
