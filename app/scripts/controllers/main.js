@@ -266,7 +266,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     updateHumanTypes();
 
     return fileObj;
-
   };
 
   var cleanUpFileObject = function(originalFileObj) {
@@ -578,5 +577,42 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $scope.deleteResource = function(index) {
     $scope.files.splice(index, 1);
     $scope.clickTab($scope.activeIndex > 0 ? $scope.activeIndex - 1 : 0);
+  };
+
+  $scope.loadModel = function(data) {
+    var url = $scope.file.remoteUrl;
+    if(!url)
+      alert("invalid URL");
+    else {
+      loadFromUrl(url);
+    }
+  };
+
+  var consolidated = {tony: "true"};
+
+  function getData() {
+    return consolidated;
   }
+
+  $scope.openInSwaggerUi = function () {
+    console.log("opening in ui");
+    var json = JSON.parse($scope.fileContents);
+    // massage into a consolidated format.  This is a hack for now
+    var consolidated = {
+      "swaggerVersion": "1.2",
+      "apis": [
+        {
+          "path": "http://localhost:8000/invalid",
+          "description": "Generating greetings in our application."
+        }
+      ],
+      "apiDeclarations": []
+    };
+
+    consolidated.apiDeclarations.push(json);
+
+    window.data = consolidated;
+    window.open('views/swagger.html', '_swagger');
+  }
+
 });
