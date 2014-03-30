@@ -83,22 +83,24 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       });
     });
 
-    Object.keys(fileObj.models).forEach(function (modelName) {
-      if (callbacks.hasOwnProperty('model')) {
-        callbacks.model(fileObj.models[modelName], modelName, fileObj.models);
-      }
+    if(fileObj.models) {
+      Object.keys(fileObj.models).forEach(function (modelName) {
+        if (callbacks.hasOwnProperty('model')) {
+          callbacks.model(fileObj.models[modelName], modelName, fileObj.models);
+        }
 
-      //if we haven't deleted the modelName key, check for properties
-      //don't run forEachItemInFile with callback =  'model' and 'property'
-      // if model may delete key prior to this
-      if (fileObj.models.hasOwnProperty(modelName)) {
-        Object.keys(fileObj.models[modelName].properties).forEach(function (propName) {
-          if (callbacks.hasOwnProperty('property')) {
-            callbacks.property(fileObj.models[modelName].properties[propName], propName, fileObj.models[modelName].properties);
-          }
-        });
-      }
-    });
+        //if we haven't deleted the modelName key, check for properties
+        //don't run forEachItemInFile with callback =  'model' and 'property'
+        // if model may delete key prior to this
+        if (fileObj.models.hasOwnProperty(modelName)) {
+          Object.keys(fileObj.models[modelName].properties).forEach(function (propName) {
+            if (callbacks.hasOwnProperty('property')) {
+              callbacks.property(fileObj.models[modelName].properties[propName], propName, fileObj.models[modelName].properties);
+            }
+          });
+        }
+      });
+    }
   };
 
   var updateHumanTypes = function() {
