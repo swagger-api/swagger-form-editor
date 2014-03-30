@@ -119,6 +119,7 @@ h2 {
 ul.tabs {
   margin: 15px 0 0;
   padding: 0;
+  width: 50%;
 
   li {
     border: 1px solid #ccc;
@@ -126,7 +127,7 @@ ul.tabs {
     display: inline-block;
     font-size: 15px;
     padding: 10px;
-    margin-right: 10px;
+    margin: 5px 10px 0 0;
 
     &.active {
       border-width: 3px;
@@ -139,7 +140,21 @@ ul.tabs {
   border: 1px solid #ddd;
   font-size: 15px;
   padding: 6px;
-  width: 50%;
+  width: 48%;
+
+  &:hover {
+    color: blue;
+  }
+}
+
+a {
+  display: inline-block;
+  margin: 4px 0;
+  text-decoration: underline;
+
+  &:hover {
+    color: blue;
+  }
 }
 
 /* xeditable */

@@ -1,15 +1,16 @@
-<div class="url">{{remoteURL}}</div>
+<div class="url" ng-click="replaceURL()" title="Click to enter new URL">{{remoteURL}}</div>
 
 <ul class="tabs">
   <li ng-repeat="file in files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
 </ul>
+<a ng-click="newResource()">New Resource</a>
 
 <div class="panel editor">
   <a ng-click="openInSwaggerUI()">Open in Swagger UI</a>
   <div ui-ace="{mode: 'json'}" readonly="true" ng-model="fileContents"></div>
 </div>
 
-<div class="panel">
+<div class="panel" ng-if="files.length > 0">
   <h1>Resource</h1>
 
   <input type="text" class="box" ng-model="files[activeIndex].resourcePath" />
@@ -102,7 +103,7 @@
     <ul class="models last">
       <li ng-repeat="model in files[activeIndex].models track by $index">
         <div class="right-menu">
-          <a ng-click="removeFromObjectByKey(files[activeIndex].models, model.__id, 'model')">x</a>
+          <a ng-click="deleteModel(files[activeIndex].models, model)">x</a>
         </div>
         <div class="heading" ng-click="headingClicked(model, $event)">
           <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>

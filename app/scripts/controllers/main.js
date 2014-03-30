@@ -6,18 +6,10 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $scope.activeIndex = 0;
   $scope.remoteURL = "";
 
-  $scope.file = null;
   $scope.fileContents = "";
 
   $scope.methods = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'];
   $scope.paramTypes = ['path', 'query', 'body', 'header', 'form'];
-
-  function loadFromUrl(url) {
-    $http.get(url).success(function(obj) {
-      importFileObject(obj);
-      $scope.file.remoteUrl = url;
-    });
-  }
 
   var primitiveTypes = {
     'integer': {type: 'integer'},
@@ -40,25 +32,39 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   //listen for changes from ng-model in the rows on the left panel of the view
   $scope.$watch('doc', function(newValue) {
     if (newValue != null) {
-      var file = cleanUpFileObject($scope.files[$scope.activeIndex]);
+      if ($scope.files.length > 0) {
+        var file = cleanUpFileObject($scope.files[$scope.activeIndex]);
 
-      //rename missing models to regular if found
-      Object.keys(allTypes).forEach(function(key) {
-        if (allTypes.hasOwnProperty("Missing:" + key)) {
-          //rename missing to the real model name
-          createNewType(file, key, "Missing:" + key, true);
-          //update every file (technically already called for this file)
-          for (var i = 0; i < $scope.files.length; i++) {
-            updateTypesInFile($scope.files[i], key, "Missing:" + key);
+        //rename missing models to regular if found
+        Object.keys(allTypes).forEach(function (key) {
+          if (allTypes.hasOwnProperty("Missing:" + key)) {
+            //rename missing to the real model name
+            createNewType(file, key, "Missing:" + key, true);
+            //update every file (technically already called for this file)
+            for (var i = 0; i < $scope.files.length; i++) {
+              updateTypesInFile($scope.files[i], key, "Missing:" + key);
+            }
           }
-        }
-      });
+        });
 
-      $scope.files[$scope.activeIndex] = file;
-      $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
+        $scope.files[$scope.activeIndex] = file;
+        $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
+      } else {
+        $scope.fileContents = "(No resources. Click 'New Resource' to create.)";
+      }
     }
   }, true);
 
+
+  var uniqueName = function(name, obj) {
+    var randomName = name + (Math.random() * 1000 + "").substring(0, 5);
+    if (obj.hasOwnProperty(randomName)) {
+      console.log("duplicate detected");
+      return uniqueName(name, obj);
+    } else {
+      return randomName;
+    }
+  };
 
   var forEachItemInFile = function (fileObj, callbacks) {
     fileObj.apis.forEach(function(api, apiIndex, apis) {
@@ -145,6 +151,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     s.specFromURL(url, function(doc) {
 
       console.log("importing");
+      console.log(doc);
+      if (!doc.hasOwnProperty('apiDeclarations')) {
+        alert("This does not appear to be a valid docs object");
+        return;
+      }
+
       allTypes = {};
 
       angular.extend(allTypes,
@@ -161,16 +173,16 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
           for (var modelName in file.models) {
             allTypes[modelName] = {type: modelName};
           }
-
         });
         $scope.doc = doc;
         $scope.files = $scope.doc.apiDeclarations;
+        $scope.remoteURL = url;
       });
     });
   };
 
-  $scope.remoteURL = "http://petstore.swagger.wordnik.com/api/api-docs";
-  importDocFromURL($scope.remoteURL);
+  //init
+  importDocFromURL("http://petstore.swagger.wordnik.com/api/api-docs");
 
   var importFileObject = function(fileObj) {
     //used for operation.type and parameter.type
@@ -311,15 +323,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       var renameKey = function(obj, newPropertyName, oldPropertyName) {
         obj[newPropertyName] = obj[oldPropertyName];
         delete obj[oldPropertyName];
-      };
-
-      var uniqueName = function(name, obj) {
-        var randomName = name + Math.random() * 1000;
-        if (obj.hasOwnProperty(randomName)) {
-          return uniqueName(name, obj);
-        } else {
-          return randomName;
-        }
       };
 
       /* great for model.id or property.name to avoid duplicates */
@@ -532,7 +535,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
 
   $scope.newAPI = function(apis, index) {
-    var newPath = $scope.file.resourcePath + (Math.random() * 1000 + "").substring(0, 5);
+    var paths = {};
+    apis.forEach(function(api) {
+      paths[api.path] = true;
+    });
+
+    var newPath = uniqueName($scope.files[$scope.activeIndex].resourcePath + '/', paths);
 
     apis.splice(index, 0, {
       "path": newPath,
@@ -578,8 +586,23 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   };
 
   $scope.deleteResource = function(index) {
+    //delete each model in resource
+    forEachItemInFile($scope.files[$scope.activeIndex], {
+      model: function(model, modelName, models) {
+        $scope.deleteModel(models, model);
+      }
+    });
+
     $scope.files.splice(index, 1);
-    $scope.clickTab($scope.activeIndex > 0 ? $scope.activeIndex - 1 : 0);
+
+    if ($scope.files.length > 0 && $scope.activeIndex > $scope.files.length - 1) {
+      $scope.clickTab($scope.activeIndex > 0 ? $scope.activeIndex - 1 : 0);
+    }
+  };
+
+  $scope.deleteModel = function(models, model) {
+    delete(models[model.id]);
+    createNewType($scope.files[$scope.activeIndex], "Missing:" + model.id, model.id, true);
   };
 
   $scope.openInSwaggerUI = function () {
@@ -590,6 +613,33 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     });
     window.data = doc;
     window.open('views/swagger.html', '_swagger');
-  }
+  };
 
+  $scope.replaceURL = function() {
+    var url = prompt("Please enter new url", $scope.remoteURL);
+    if (url) {
+      importDocFromURL(url);
+    }
+  };
+
+  $scope.newResource = function() {
+    var resources = {};
+    $scope.files.forEach(function(file) {
+      resources[file.resourcePath] = true;
+    });
+
+    var newName = uniqueName("/new", resources);
+    $scope.files.push({
+      "apiVersion": "1.0.0",
+      "swaggerVersion": "1.2",
+      "basePath": "http://petstore.swagger.wordnik.com/api",
+      "resourcePath": newName,
+      "produces": [
+        "application/json"
+      ],
+      "apis": [],
+      "models": {}
+    });
+    $scope.activeIndex = $scope.files.length - 1;
+  };
 });
