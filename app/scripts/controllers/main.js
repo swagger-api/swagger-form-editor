@@ -29,6 +29,85 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.friendlyTypes = [];
 
+  var editor = null;
+
+  $scope.editorLoaded = function(_editor) {
+    editor = _editor;
+  };
+
+  $scope.editorChanged = function() {
+    console.log("CHANGED");
+  }
+
+  var highlightOpenBlocks = function() {
+    console.log("HIGHLIGHT OPEN BLOCKS");
+    //clear existing markers
+    for (var markerID in editor.getSession().getMarkers()) {
+      editor.getSession().removeMarker(markerID);
+    }
+
+    forEachItemInFile($scope.files[$scope.activeIndex], {
+      operation: function (op, opIndex, ops, api) {
+        if (op.__open) {
+          highlightBlock(
+              '"path": "' + api.path + '"',
+              '"method": "' + op.method + '"'
+          );
+        }
+      }
+    });
+  };
+
+  var highlightBlock = function(parentSelector, blockSelector) {
+    $timeout(function() {
+      if (editor) {
+        //      console.log("HIGHLIGHT BLOCK");
+        var aceSearch = ace.require('ace/search').Search;
+        var aceRange = ace.require('ace/range').Range;
+
+        var range;
+
+        //find and highlight the parent selector
+        var search = new aceSearch().set({needle: parentSelector});
+        range = search.find(editor.getSession());
+        //      editor.getSession().addMarker(range, "ace_active-line", "fullLine");
+        //      console.log(range);
+        //      console.log(blockSelector);
+
+        //find and highlight the block
+        var search = new aceSearch().set({needle: blockSelector, start: range.start});
+        //      {wholeWord: true, wrap: false, range: {start: range.start, end: {row: 200, column: 0}}
+        range = search.find(editor.getSession());
+        //      console.log(range);
+        editor.gotoLine(range.start.row + 1, 0);
+        var cursor = editor.getCursorPosition();
+
+        range = editor.find({
+          needle: /[({})\[\]]/g,
+          preventScroll: true,
+          backwards: true,
+          start: {row: cursor.row, column: cursor.column - 1 }
+        });
+
+        var matching = editor.session.findMatchingBracket(range.end);
+
+        if (aceRange.comparePoints(matching, range.end) > 0) {
+          range.end = matching;
+          range.end.column++;
+        } else {
+          range.start = matching;
+        }
+
+//        $timeout(function () {
+          editor.getSession().addMarker(range, "ace_active-line", "fullLine");
+          editor.scrollToLine(range.start.row - 2);
+//        }, 0);
+        //      console.log('scrolling to ' + range.start.row);
+      }
+    }, 0);
+
+  };
+
   //listen for changes from ng-model in the rows on the left panel of the view
   $scope.$watch('doc', function(newValue) {
     if (newValue != null) {
@@ -49,6 +128,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
         $scope.files[$scope.activeIndex] = file;
         $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
+        highlightOpenBlocks();
+
       } else {
         $scope.fileContents = "(No resources. Click 'New Resource' to create.)";
       }
@@ -514,25 +595,38 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     });
   };
 
-  $scope.headingClicked = function(obj, event) {
-    if (!obj.__open) {
-      obj.__open = true;
-    } else if (event.target.className == 'heading') {
-      obj.__open = false;
-    }
+  $scope.headingClicked = function(obj) {
+    closeAllHeadings($scope.files[$scope.activeIndex], obj);
   };
 
-  $scope.newOperationAfterIndex = function(api, opIndex) {
-    api.operations.splice(opIndex + 1, 0, {
+  var closeAllHeadings = function(fileObj, objToToggle) {
+    var closeOrToggle = function(obj) {
+      if (objToToggle && obj == objToToggle && !objToToggle.__open) {
+        obj.__open = true;
+      } else {
+        delete(obj.__open);
+      }
+    };
+
+    forEachItemInFile(fileObj, {
+      operation: closeOrToggle,
+      model: closeOrToggle
+    });
+  };
+
+  $scope.newOperationAfterIndex = function(api, aaIndex) {
+    var newIndex = typeof(opIndex) == 'undefined' ? 0 : opIndex + 1;
+    api.operations.splice(newIndex, 0, {
 //      __class: "new",
       "method": "GET",
       "summary": "(summary)",
       "nickname": "(nickname)",
       "parameters": [],
       "__friendlyType": "void",
-      "__path": api.path,
-      "__open": true
+      "__path": api.path
     });
+
+    closeAllHeadings($scope.files[$scope.activeIndex], api.operations[opIndex + 1]);
   };
 
 
@@ -556,9 +650,10 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     models[newModelName] = {
       id: newModelName,
       __id: newModelName,
-      properties: {},
-      __open: true
+      properties: {}
     };
+
+    closeAllHeadings($scope.files[$scope.activeIndex], models[newModelName]);
 
     allTypes[newModelName] = {type: newModelName};
     updateHumanTypes();
@@ -585,6 +680,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   $scope.clickTab = function(index) {
     $scope.activeIndex = index;
     $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
+
+    highlightOpenBlocks();
   };
 
   $scope.deleteResource = function(index) {
