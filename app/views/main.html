@@ -36,7 +36,7 @@
             <div class="right-menu">
               <a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>
             </div>
-            <div class="heading" ng-click="headingClicked(operation)">
+            <div class="heading" ng-click="headingClicked(operation, $event)">
 
               <select ng-if="operation.__open" ng-model="operation.method" ng-options="m for m in methods"></select>
               <span ng-if="!operation.__open">{{operation.method}}</span>
@@ -105,7 +105,7 @@
         <div class="right-menu">
           <a ng-click="deleteModel(files[activeIndex].models, model)">x</a>
         </div>
-        <div class="heading" ng-click="headingClicked(model)">
+        <div class="heading" ng-click="headingClicked(model, $event)">
           <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
           <input ng-if="model.__open" type="text" class="summary" placeholder="description" ng-model="model.description" />
           <span ng-if="!model.__open" class="summary">{{model.description}}</span>

@@ -595,8 +595,10 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     });
   };
 
-  $scope.headingClicked = function(obj) {
-    closeAllHeadings($scope.files[$scope.activeIndex], obj);
+  $scope.headingClicked = function(obj, event) {
+    if (event.target.className == 'heading' || !obj.__open) {
+      closeAllHeadings($scope.files[$scope.activeIndex], obj);
+    }
   };
 
   var closeAllHeadings = function(fileObj, objToToggle) {
