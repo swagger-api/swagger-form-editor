@@ -1,33 +1,14 @@
 'use strict';
 
-app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
-  $scope.doc = null;
-  $scope.files = [];
-  $scope.activeIndex = 0;
-  $scope.remoteURL = "";
+app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, ProjectService, ProjectUtilities, CodeEditorService) {
 
+  $scope.projectService = ProjectService;
+  $scope.projectUtilities = ProjectUtilities;
+  $scope.activeIndex = 0;
   $scope.fileContents = "";
 
   $scope.methods = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'];
   $scope.paramTypes = ['path', 'query', 'body', 'header', 'form'];
-
-  var primitiveTypes = {
-    'integer': {type: 'integer'},
-    'integer [int32]': {type: 'integer', format: 'int32'},
-    'integer [int64]': {type: 'integer', format: 'int64'},
-    'number': {type: 'number'},
-    'number [float]': {type: 'number', format: 'float'},
-    'number [double]': {type: 'number', format: 'double'},
-    'string': {type: 'string'},
-    'string [byte]': {type: 'string', format: 'byte'},
-    'boolean': {type: 'boolean'},
-    'string [date]': {type: 'string', format: 'date'},
-    'string [date-time]': {type: 'string', format: 'date-time'}
-  };
-
-  var allTypes = {};
-
-  $scope.friendlyTypes = [];
 
   var editor = null;
 
@@ -37,98 +18,29 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.editorChanged = function() {
     console.log("CHANGED");
-  }
-
-  var highlightOpenBlocks = function() {
-    console.log("HIGHLIGHT OPEN BLOCKS");
-    //clear existing markers
-    for (var markerID in editor.getSession().getMarkers()) {
-      editor.getSession().removeMarker(markerID);
-    }
-
-    forEachItemInFile($scope.files[$scope.activeIndex], {
-      operation: function (op, opIndex, ops, api) {
-        if (op.__open) {
-          highlightBlock(
-              '"path": "' + api.path + '"',
-              '"method": "' + op.method + '"'
-          );
-        }
-      }
-    });
-  };
-
-  var highlightBlock = function(parentSelector, blockSelector) {
-    $timeout(function() {
-      if (editor) {
-        //      console.log("HIGHLIGHT BLOCK");
-        var aceSearch = ace.require('ace/search').Search;
-        var aceRange = ace.require('ace/range').Range;
-
-        var range;
-
-        //find and highlight the parent selector
-        var search = new aceSearch().set({needle: parentSelector});
-        range = search.find(editor.getSession());
-        //      editor.getSession().addMarker(range, "ace_active-line", "fullLine");
-        //      console.log(range);
-        //      console.log(blockSelector);
-
-        //find and highlight the block
-        var search = new aceSearch().set({needle: blockSelector, start: range.start});
-        //      {wholeWord: true, wrap: false, range: {start: range.start, end: {row: 200, column: 0}}
-        range = search.find(editor.getSession());
-        //      console.log(range);
-        editor.gotoLine(range.start.row + 1, 0);
-        var cursor = editor.getCursorPosition();
-
-        range = editor.find({
-          needle: /[({})\[\]]/g,
-          preventScroll: true,
-          backwards: true,
-          start: {row: cursor.row, column: cursor.column - 1 }
-        });
-
-        var matching = editor.session.findMatchingBracket(range.end);
-
-        if (aceRange.comparePoints(matching, range.end) > 0) {
-          range.end = matching;
-          range.end.column++;
-        } else {
-          range.start = matching;
-        }
-
-//        $timeout(function () {
-          editor.getSession().addMarker(range, "ace_active-line", "fullLine");
-          editor.scrollToLine(range.start.row - 2);
-//        }, 0);
-        //      console.log('scrolling to ' + range.start.row);
-      }
-    }, 0);
-
   };
 
   //listen for changes from ng-model in the rows on the left panel of the view
-  $scope.$watch('doc', function(newValue) {
+  $scope.$watch('projectService.doc', function(newValue) {
     if (newValue != null) {
-      if ($scope.files.length > 0) {
-        var file = cleanUpFileObject($scope.files[$scope.activeIndex]);
+      if (ProjectService.files.length > 0) {
+        var file = cleanUpFileObject(ProjectService.files[$scope.activeIndex]);
 
         //rename missing models to regular if found
-        Object.keys(allTypes).forEach(function (key) {
-          if (allTypes.hasOwnProperty("Missing:" + key)) {
+        Object.keys(ProjectService.allTypes).forEach(function (key) {
+          if (ProjectService.allTypes.hasOwnProperty("Missing:" + key)) {
             //rename missing to the real model name
-            createNewType(file, key, "Missing:" + key, true);
+            ProjectService.createNewType(file, key, "Missing:" + key, true);
             //update every file (technically already called for this file)
-            for (var i = 0; i < $scope.files.length; i++) {
-              updateTypesInFile($scope.files[i], key, "Missing:" + key);
+            for (var i = 0; i < ProjectService.files.length; i++) {
+              ProjectUtilities.updateTypesInFile(ProjectService.files[i], key, "Missing:" + key);
             }
           }
         });
 
-        $scope.files[$scope.activeIndex] = file;
-        $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
-        highlightOpenBlocks();
+        ProjectService.files[$scope.activeIndex] = file;
+        $scope.fileContents = exportFileObject(ProjectService.files[$scope.activeIndex], 'json');
+        CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
 
       } else {
         $scope.fileContents = "(No resources. Click 'New Resource' to create.)";
@@ -137,231 +49,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   }, true);
 
 
-  var uniqueName = function(name, obj) {
-    var randomName = name + (Math.random() * 1000 + "").substring(0, 5);
-    if (obj.hasOwnProperty(randomName)) {
-      console.log("duplicate detected");
-      return uniqueName(name, obj);
-    } else {
-      return randomName;
-    }
-  };
-
-  var forEachItemInFile = function (fileObj, callbacks) {
-    fileObj.apis.forEach(function(api, apiIndex, apis) {
-      if (callbacks.hasOwnProperty('api')) {
-        callbacks.api(api, apiIndex, apis);
-      }
-      api.operations.forEach(function (op, opIndex, ops) {
-        if (callbacks.hasOwnProperty('operation')) {
-          callbacks.operation(op, opIndex, ops, api, apiIndex, apis);
-        }
-        op.parameters.forEach(function (param, paramIndex, params) {
-          if (callbacks.hasOwnProperty('parameter')) {
-            callbacks.parameter(param, paramIndex, params);
-          }
-        });
-      });
-    });
-
-    if(fileObj.models) {
-      Object.keys(fileObj.models).forEach(function (modelName) {
-        if (callbacks.hasOwnProperty('model')) {
-          callbacks.model(fileObj.models[modelName], modelName, fileObj.models);
-        }
-
-        //if we haven't deleted the modelName key, check for properties
-        //don't run forEachItemInFile with callback =  'model' and 'property'
-        // if model may delete key prior to this
-        if (fileObj.models.hasOwnProperty(modelName)) {
-          Object.keys(fileObj.models[modelName].properties).forEach(function (propName) {
-            if (callbacks.hasOwnProperty('property')) {
-              callbacks.property(fileObj.models[modelName].properties[propName], propName, fileObj.models[modelName].properties);
-            }
-          });
-        }
-      });
-    }
-  };
-
-  var updateHumanTypes = function() {
-    var friendlyTypes = [];
-    for (var typeName in allTypes) {
-      if (allTypes.hasOwnProperty(typeName)) {
-        friendlyTypes.push(typeName);
-      }
-    }
-
-    $scope.friendlyTypes = friendlyTypes;
-  };
-
-  //used for creating or renaming a model type, updating dropdown, and calling updateTypesInFile
-  var createNewType = function(fileObj, newName, originalName, deleteOriginal) {
-    allTypes[newName] = {type: newName};
-    if (deleteOriginal) {
-      delete(allTypes[originalName]);
-    }
-    updateHumanTypes();
-    updateTypesInFile(fileObj, newName, originalName);
-  };
-
-  //used for updating model name in types of all kinds
-  var updateTypesInFile = function(fileObj, newName, originalName) {
-    var updateType = function(object) {
-      if (object.hasOwnProperty('__friendlyType') &&
-        object.__friendlyType == originalName) {
-        object.__friendlyType = newName;
-      }
-    };
-
-    //update all saved types
-    forEachItemInFile(fileObj, {
-      parameter: function(parameter) { //parameter type
-        updateType(parameter);
-      },
-      operation: function(op) { //return type
-        updateType(op);
-      },
-      property: function(prop) { //model property type
-        updateType(prop);
-      }
-    });
-  };
-
-
-  var importDocFromURL = function(url) {
-    var s = new SwaggerApi(url);
-    s.specFromURL(url, function(doc) {
-
-      console.log("importing");
-      console.log(doc);
-      if (!doc.hasOwnProperty('apiDeclarations')) {
-        alert("This does not appear to be a valid docs object");
-        return;
-      }
-
-      allTypes = {};
-
-      angular.extend(allTypes,
-        { 'void': { type: 'void' } },
-        primitiveTypes,
-        { 'File': { type: 'File' } }
-      );
-
-      $scope.$apply(function() {
-        doc.apiDeclarations.forEach(function (file, i) {
-          doc.apiDeclarations[i] = importFileObject(file);
-
-          //add model names to our allTypes list
-          for (var modelName in file.models) {
-            allTypes[modelName] = {type: modelName};
-          }
-        });
-        $scope.doc = doc;
-        $scope.files = $scope.doc.apiDeclarations;
-        $scope.remoteURL = url;
-      });
-    });
-  };
-
   //init
-  importDocFromURL("http://petstore.swagger.wordnik.com/api/api-docs");
-
-  var importFileObject = function(fileObj) {
-    //used for operation.type and parameter.type
-    var replaceTypeAndFormatWithFriendlyType = function(obj) {
-
-      var getFriendlyTypeAndDeleteOriginal = function(obj) {
-        var newName = null;
-
-        for (var name in allTypes) {
-          if (allTypes[name].type == obj.type &&
-            allTypes[name].format == obj.format) {
-            newName = name;
-            break;
-          }
-        }
-        if (!newName) {
-          console.log("hmm no match for " + obj.type);
-        }
-        delete(obj.type);
-        delete(obj.format);
-
-        return newName;
-      };
-
-      var originalType;
-
-      if (obj.hasOwnProperty('items')) {
-        if (obj.items.hasOwnProperty('type')) {
-          originalType = obj.items.type;
-          obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj.items);
-        } else {
-          originalType = obj.items['$ref'];
-          obj.__friendlyType = obj.items['$ref'];
-
-          if (!allTypes.hasOwnProperty(obj.__friendlyType)) {
-            obj.__friendlyType = null;
-          }
-        }
-        obj.__array = true;
-        delete(obj.type);
-        delete(obj.items);
-      } else if (obj.hasOwnProperty('$ref')) {
-        originalType = obj['$ref'];
-        obj.__friendlyType = obj['$ref'];
-        if (!allTypes.hasOwnProperty(obj.__friendlyType)) {
-          obj.__friendlyType = null;
-        }
-        delete(obj['$ref']);
-      } else {
-        originalType = obj.type;
-        obj.__friendlyType = getFriendlyTypeAndDeleteOriginal(obj);
-      }
-//      console.log("originalType was " + originalType);
-//      console.log("friendlyType is now " + obj.__friendlyType);
-      if (obj.__friendlyType == null) {
-        var newType = "Missing:" + originalType;
-        obj.__friendlyType = newType;
-        createNewType(fileObj, newType, originalType);
-      }
-
-    };
-
-
-
-    //replace type and format with friendlyType
-    forEachItemInFile(fileObj, {
-      operation: replaceTypeAndFormatWithFriendlyType,
-      parameter: replaceTypeAndFormatWithFriendlyType
-//      property: replaceTypeAndFormatWithFriendlyType
-    });
-
-    //replace type and format with friendlyType
-    forEachItemInFile(fileObj, {
-      property: replaceTypeAndFormatWithFriendlyType
-    });
-
-    //add a __path to each operation object, __id to model, and __name to each property object
-    forEachItemInFile(fileObj, {
-      operation: function(op, opIndex, ops, api) {
-        op.__path = api.path;
-      },
-      model: function(model, modelName, models) {
-        model.__id = model.id;
-        var i = 1;
-        for (var propertyName in model.properties) {
-          model.properties[propertyName].__name = propertyName;
-          model.properties[propertyName].__storedName = propertyName;
-          model.properties[propertyName].__order = i++;
-        }
-      }
-    });
-
-    updateHumanTypes();
-
-    return fileObj;
-  };
+  ProjectService.importDocFromURL("http://petstore.swagger.wordnik.com/api/api-docs");
 
   var cleanUpFileObject = function(originalFileObj) {
     var fileObj = angular.copy(originalFileObj);
@@ -413,12 +102,12 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         var newName = object[newPropertyName];
 
         //does newName conflict?  Check based on type dropDown
-        if (allTypes.hasOwnProperty(newName)) {
+        if (ProjectService.allTypes.hasOwnProperty(newName)) {
           //is known duplicate?
           if (object.__duplicate) {
             return object[oldPropertyName];
           } else {
-            newName = uniqueName(object[newPropertyName], collection);
+            newName = ProjectUtilities.uniqueName(object[newPropertyName], collection);
             object.__duplicate = true;
           }
         } else {
@@ -437,7 +126,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
         var newName = renameObjectKeyWithNewName(model, models, '__id', 'id');
 
         if (originalName != newName) {
-          createNewType(fileObj, newName, originalName, true);
+          ProjectService.createNewType(fileObj, newName, originalName, true);
 
         }
       }
@@ -491,7 +180,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     };
 
     //trigger validations for each parameterType
-    forEachItemInFile(fileObj, {
+    ProjectUtilities.forEachItemInFile(fileObj, {
       parameter: paramTypeChanged,
       operation: checkIfOperationPropertiesChanged,
       model: checkIfModelPropertiesChanged
@@ -509,9 +198,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     var revertBackToTypeAndFormat = function(obj) {
       var setTypeAndFormat = function(obj, friendlyType) {
         console.log(friendlyType);
-        obj.type = allTypes[friendlyType].type;
-        if (allTypes[friendlyType].hasOwnProperty('format')) {
-          obj.format = allTypes[friendlyType].format;
+        obj.type = ProjectService.allTypes[friendlyType].type;
+        if (ProjectService.allTypes[friendlyType].hasOwnProperty('format')) {
+          obj.format = ProjectService.allTypes[friendlyType].format;
         }
       };
 
@@ -536,14 +225,14 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     };
 
     //replace friendlyType with correct type && format
-    forEachItemInFile(fileObj, {
+    ProjectUtilities.forEachItemInFile(fileObj, {
       operation: revertBackToTypeAndFormat,
       parameter: revertBackToTypeAndFormat,
       property: revertBackToTypeAndFormat
     });
 
     //remove private properties
-    forEachItemInFile(fileObj, {
+    ProjectUtilities.forEachItemInFile(fileObj, {
       operation: function(op) {
         delete(op.__path);
         delete(op.__open);
@@ -578,7 +267,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
     delete(obj[key]);
 
     if (kind == 'model') {
-      createNewType($scope.files[$scope.activeIndex], "Missing:" + key, key, true);
+      ProjectService.createNewType(ProjectService.files[$scope.activeIndex], "Missing:" + key, key, true);
     }
   };
 
@@ -597,7 +286,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.headingClicked = function(obj, event) {
     if (event.target.className == 'heading' || !obj.__open) {
-      closeAllHeadings($scope.files[$scope.activeIndex], obj);
+      closeAllHeadings(ProjectService.files[$scope.activeIndex], obj);
     }
   };
 
@@ -610,13 +299,13 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       }
     };
 
-    forEachItemInFile(fileObj, {
+    ProjectUtilities.forEachItemInFile(fileObj, {
       operation: closeOrToggle,
       model: closeOrToggle
     });
   };
 
-  $scope.newOperationAfterIndex = function(api, aaIndex) {
+  $scope.newOperationAfterIndex = function(api, opIndex) {
     var newIndex = typeof(opIndex) == 'undefined' ? 0 : opIndex + 1;
     api.operations.splice(newIndex, 0, {
 //      __class: "new",
@@ -628,7 +317,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "__path": api.path
     });
 
-    closeAllHeadings($scope.files[$scope.activeIndex], api.operations[opIndex + 1]);
+    closeAllHeadings(ProjectService.files[$scope.activeIndex], api.operations[newIndex]);
   };
 
 
@@ -638,7 +327,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       paths[api.path] = true;
     });
 
-    var newPath = uniqueName($scope.files[$scope.activeIndex].resourcePath + '/', paths);
+    var newPath = ProjectUtilities.uniqueName(ProjectService.files[$scope.activeIndex].resourcePath + '/', paths);
 
     apis.splice(index, 0, {
       "path": newPath,
@@ -655,10 +344,10 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       properties: {}
     };
 
-    closeAllHeadings($scope.files[$scope.activeIndex], models[newModelName]);
+    closeAllHeadings(ProjectService.files[$scope.activeIndex], models[newModelName]);
 
-    allTypes[newModelName] = {type: newModelName};
-    updateHumanTypes();
+    ProjectService.allTypes[newModelName] = {type: newModelName};
+    ProjectUtilities.generateTypesAsArray(ProjectService.allTypes);
   };
 
   $scope.newProperty = function(properties) {
@@ -681,33 +370,33 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
 
   $scope.clickTab = function(index) {
     $scope.activeIndex = index;
-    $scope.fileContents = exportFileObject($scope.files[$scope.activeIndex], 'json');
+    $scope.fileContents = exportFileObject(ProjectService.files[$scope.activeIndex], 'json');
 
-    highlightOpenBlocks();
+    CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
   };
 
   $scope.deleteResource = function(index) {
     //delete each model in resource
-    forEachItemInFile($scope.files[$scope.activeIndex], {
+    ProjectUtilities.forEachItemInFile(ProjectService.files[$scope.activeIndex], {
       model: function(model, modelName, models) {
         $scope.deleteModel(models, model);
       }
     });
 
-    $scope.files.splice(index, 1);
+    ProjectService.files.splice(index, 1);
 
-    if ($scope.files.length > 0 && $scope.activeIndex > $scope.files.length - 1) {
+    if (ProjectService.files.length > 0 && $scope.activeIndex > ProjectService.files.length - 1) {
       $scope.clickTab($scope.activeIndex > 0 ? $scope.activeIndex - 1 : 0);
     }
   };
 
   $scope.deleteModel = function(models, model) {
     delete(models[model.id]);
-    createNewType($scope.files[$scope.activeIndex], "Missing:" + model.id, model.id, true);
+    ProjectService.createNewType(ProjectService.files[$scope.activeIndex], "Missing:" + model.id, model.id, true);
   };
 
   $scope.openInSwaggerUI = function () {
-    var doc = angular.copy($scope.doc);
+    var doc = angular.copy(ProjectService.doc);
     //replace each resource with exported version (removes internal properties)
     doc.apiDeclarations.forEach(function(resource, i) {
       doc.apiDeclarations[i] = exportFileObject(resource);
@@ -717,20 +406,20 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
   };
 
   $scope.replaceURL = function() {
-    var url = prompt("Please enter new url", $scope.remoteURL);
+    var url = prompt("Please enter new url", ProjectService.remoteURL);
     if (url) {
-      importDocFromURL(url);
+      ProjectService.importDocFromURL(url);
     }
   };
 
   $scope.newResource = function() {
     var resources = {};
-    $scope.files.forEach(function(file) {
+    ProjectService.files.forEach(function(file) {
       resources[file.resourcePath] = true;
     });
 
-    var newName = uniqueName("/new", resources);
-    $scope.files.push({
+    var newName = ProjectUtilities.uniqueName("/new", resources);
+    ProjectService.files.push({
       "apiVersion": "1.0.0",
       "swaggerVersion": "1.2",
       "basePath": "http://petstore.swagger.wordnik.com/api",
@@ -741,6 +430,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout) {
       "apis": [],
       "models": {}
     });
-    $scope.activeIndex = $scope.files.length - 1;
+    $scope.activeIndex = ProjectService.files.length - 1;
   };
 });

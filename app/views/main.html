@@ -1,7 +1,7 @@
-<div class="url" ng-click="replaceURL()" title="Click to enter new URL">{{remoteURL}}</div>
+<div class="url" ng-click="replaceURL()" title="Click to enter new URL">{{projectService.remoteURL}}</div>
 
 <ul class="tabs">
-  <li ng-repeat="file in files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
+  <li ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
 </ul>
 <a ng-click="newResource()">New Resource</a>
 
@@ -10,22 +10,22 @@
   <div ui-ace="{mode: 'javascript', onLoad: editorLoaded, onChange: editorChanged}" readonly="true" ng-model="fileContents"></div>
 </div>
 
-<div class="panel" ng-if="files.length > 0">
+<div class="panel" ng-if="projectService.files.length > 0">
   <h1>Resource</h1>
 
-  <input type="text" class="box" ng-model="files[activeIndex].resourcePath" />
+  <input type="text" class="box" ng-model="projectService.files[activeIndex].resourcePath" />
   <a ng-mousedown="deleteResource(activeIndex)">Delete Resource</a>
 
   <div class="items">
     <h2>APIs</h2>
-    <a ng-click="newAPI(files[activeIndex].apis, 0)">New API</a>
+    <a ng-click="newAPI(projectService.files[activeIndex].apis, 0)">New API</a>
     <ul class="apis">
-      <li ng-repeat="api in files[activeIndex].apis track by $index">
+      <li ng-repeat="api in projectService.files[activeIndex].apis track by $index">
         <div class="heading error" ng-if="api.operations.length == 0">
           <span class="method"></span>
           <span class="name" editable-text="api.path">{{api.path}}</span>
           <span class="summary">API has zero operations. Delete resource?</span>
-          <a ng-click="removeFromArrayByIndex(files[activeIndex].apis, $index)">X</a>
+          <a ng-click="removeFromArrayByIndex(projectService.files[activeIndex].apis, $index)">X</a>
         </div>
         <div ng-if="api.operations.length == 0">
           <a ng-mousedown="newOperationAfterIndex(api)">New Operation Below This One</a>
@@ -48,7 +48,7 @@
             </div>
 
             <div class="edit" ng-if="operation.__open">
-              Return type: <select ng-model="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" ng-options="type for type in friendlyTypes"></select>
+              Return type: <select ng-model="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" ng-options="type for type in projectUtilities.typesAsArray"></select>
 
               <input type="checkbox" ng-disabled="operation.__friendlyType == 'void'" ng-model="operation.__array" />array?
 
@@ -73,7 +73,7 @@
                       <input type="text" placeholder="description" ng-model="parameter.description"/>
                     </td>
                     <td>
-                      <select ng-model="parameter.__friendlyType" ng-options="type for type in friendlyTypes | filter:'!void'"></select>
+                      <select ng-model="parameter.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
                     </td>
                     <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
                     <td>
@@ -98,12 +98,12 @@
 
   <div class="items">
     <h2>Models</h2>
-    <a ng-click="newModel(files[activeIndex].models)">New Model</a>
+    <a ng-click="newModel(projectService.files[activeIndex].models)">New Model</a>
 
     <ul class="models last">
-      <li ng-repeat="model in files[activeIndex].models track by $index">
+      <li ng-repeat="model in projectService.files[activeIndex].models track by $index">
         <div class="right-menu">
-          <a ng-click="deleteModel(files[activeIndex].models, model)">x</a>
+          <a ng-click="deleteModel(projectService.files[activeIndex].models, model)">x</a>
         </div>
         <div class="heading" ng-click="headingClicked(model, $event)">
           <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
@@ -133,7 +133,7 @@
                   <input type="text" ng-model="property.description"/>
                 </td>
                 <td>
-                  <select ng-model="property.__friendlyType" ng-options="type for type in friendlyTypes | filter:'!void'"></select>
+                  <select ng-model="property.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
                 </td>
                 <!--<td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>-->
                 <!--<td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>-->
