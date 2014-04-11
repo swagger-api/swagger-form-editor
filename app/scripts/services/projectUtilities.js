@@ -40,8 +40,9 @@ angular.module('swaggerEditorApp').factory('ProjectUtilities', function () {
           }
 
           //if we haven't deleted the modelName key, check for properties
-          //don't run forEachItemInFile with callback =  'model' and 'property'
-          // if model may delete key prior to this
+          //note to developers:
+          // don't run forEachItemInFile with callback = 'property' if you're also
+          // running callback = 'model' where you delete some models
           if (fileObj.models.hasOwnProperty(modelName)) {
             Object.keys(fileObj.models[modelName].properties).forEach(function (propName) {
               if (callbacks.hasOwnProperty('property')) {
@@ -54,12 +55,12 @@ angular.module('swaggerEditorApp').factory('ProjectUtilities', function () {
     },
 
     uniqueName: function (name, obj) {
-      var randomName = name + (Math.random() * 1000 + "").substring(0, 5);
-      if (obj.hasOwnProperty(randomName)) {
+      if (obj.hasOwnProperty(name)) {
         console.log("duplicate detected");
-        return this(name, obj);
+        var randomName = name + (Math.random() * 1000 + "").substring(0, 5);
+        return utilities.uniqueName(randomName, obj);
       } else {
-        return randomName;
+        return name;
       }
     },
 
@@ -74,25 +75,25 @@ angular.module('swaggerEditorApp').factory('ProjectUtilities', function () {
       utilities.typesAsArray = typesAsArray;
     },
 
-    //used for updating model name in types of all kinds
-    updateTypesInFile: function (fileObj, newName, originalName) {
-      var updateType = function (object) {
-        if (object.hasOwnProperty('__friendlyType') &&
-          object.__friendlyType == originalName) {
-          object.__friendlyType = newName;
-        }
-      };
+    renameType: function (object, newName, originalName) {
+      if (object.hasOwnProperty('__friendlyType') &&
+        object.__friendlyType == originalName) {
+        object.__friendlyType = newName;
+      }
+    },
 
-      //update all saved types
+    //rename model across all parameters and operations
+    renameTypeInFile: function (fileObj, newName, originalName) {
       utilities.forEachItemInFile(fileObj, {
-        parameter: function (parameter) { //parameter type
-          updateType(parameter);
+        parameter: function(param) {
+//          console.log("renaming " + originalName + " to " + newName + " for");
+//          console.log(param);
+          utilities.renameType(param, newName, originalName);
         },
-        operation: function (op) { //return type
-          updateType(op);
-        },
-        property: function (prop) { //model property type
-          updateType(prop);
+        operation: function(op) {
+//          console.log("renaming " + originalName + " to " + newName + " for");
+//          console.log(op);
+          utilities.renameType(op, newName, originalName);
         }
       });
     }

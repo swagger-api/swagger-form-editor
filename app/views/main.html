@@ -98,12 +98,12 @@
 
   <div class="items">
     <h2>Models</h2>
-    <a ng-click="newModel(projectService.files[activeIndex].models)">New Model</a>
+    <a ng-click="newModel()">New Model</a>
 
     <ul class="models last">
-      <li ng-repeat="model in projectService.files[activeIndex].models track by $index">
+      <li ng-repeat="model in modelService.models track by $index">
         <div class="right-menu">
-          <a ng-click="deleteModel(projectService.files[activeIndex].models, model)">x</a>
+          <a ng-click="deleteModel(modelService.models, model)">x</a>
         </div>
         <div class="heading" ng-click="headingClicked(model, $event)">
           <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
@@ -111,7 +111,7 @@
           <span ng-if="!model.__open" class="summary">{{model.description}}</span>
         </div>
 
-        <div class="edit" ng-if="model.__open">
+        <div class="edit" ng-show="model.__open">
           <table class="properties">
             <thead>
               <tr>
@@ -141,7 +141,7 @@
               </tr>
             </tbody>
           </table>
-          <a ng-mousedown="newProperty(model.properties)">Add Property</a>
+          <a ng-mousedown="newProperty(model)">Add Property</a>
         </div>
       </li>
     </ul>

@@ -1,4 +1,4 @@
-angular.module('swaggerEditorApp').factory('CodeEditorService', function (ProjectUtilities, $timeout) {
+angular.module('swaggerEditorApp').factory('CodeEditorService', function (ProjectUtilities, ModelService, $timeout) {
 
   var service = {
     highlightBlocksInFile: function(file, editor) {
@@ -14,6 +14,18 @@ angular.module('swaggerEditorApp').factory('CodeEditorService', function (Projec
             service.highlightBlock(
               '"path": "' + api.path + '"',
               '"method": "' + op.method + '"',
+              editor
+            );
+          }
+        }
+      });
+
+      ModelService.forEach({
+        model: function (model, modelName, models) {
+          if (model.__open) {
+            service.highlightBlock(
+              '"models": {',
+              '"id": "' + model.id + '"',
               editor
             );
           }
