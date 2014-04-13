@@ -1,12 +1,19 @@
-<div class="url" ng-click="replaceURL()" title="Click to enter new URL">{{projectService.remoteURL}}</div>
+<div class="url" ng-click="replaceURL()" title="Click to enter new URL">{{projectService.remoteURL || "No open project.  You should create or open one!"}}</div>
 
-<ul class="tabs">
-  <li ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
+<ul>
+  <li><a class="" ng-click="workspaceService.new()">New Project</a></li>
+  <li><a class="" ng-click="workspaceService.close()">Close Project</a></li>
 </ul>
-<a ng-click="newResource()">New Resource</a>
+
+<div ng-if="projectService.doc">
+  <ul class="tabs">
+    <li ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
+  </ul>
+  <a ng-click="newResource()">New Resource</a>
+</div>
 
 <div class="panel editor">
-  <a ng-click="openInSwaggerUI()">Open in Swagger UI</a>
+  <a ng-click="openInSwaggerUI()" ng-if="projectService.doc">Open in Swagger UI</a>
   <div ui-ace="{mode: 'javascript', onLoad: editorLoaded, onChange: editorChanged}" readonly="true" ng-model="fileContents"></div>
 </div>
 

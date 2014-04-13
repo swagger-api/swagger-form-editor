@@ -6,6 +6,7 @@ angular.module('swaggerEditorApp').factory('ModelService', function (ProjectUtil
 
     resetTypesAndModels: function() {
       service.allTypes = {};
+      service.models = {};
 
       angular.extend(service.allTypes,
         { 'void': { type: 'void' } },
@@ -14,6 +15,7 @@ angular.module('swaggerEditorApp').factory('ModelService', function (ProjectUtil
       );
 
       ProjectUtilities.generateTypesAsArray(service.allTypes);
+
     },
 
     newProperty: function(requestedName, model) {

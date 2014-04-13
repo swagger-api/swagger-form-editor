@@ -1,7 +1,8 @@
 'use strict';
 
-app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, ProjectService, ModelService, ProjectUtilities, CodeEditorService) {
+app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, WorkspaceService, ProjectService, ModelService, ProjectUtilities, CodeEditorService) {
 
+  $scope.workspaceService = WorkspaceService;
   $scope.projectService = ProjectService;
   $scope.modelService = ModelService;
   $scope.projectUtilities = ProjectUtilities;
@@ -63,7 +64,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, ProjectSe
 
 
   //init
-  ProjectService.importDocFromURL("http://petstore.swagger.wordnik.com/api/api-docs");
+  WorkspaceService.openProject("http://petstore.swagger.wordnik.com/api/api-docs");
 
   $scope.removeFromArrayByIndex = function(arr, index) {
     arr.splice(index, 1);

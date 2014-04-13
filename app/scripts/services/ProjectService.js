@@ -9,22 +9,43 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
     importDocFromURL: function(url) {
       var s = new SwaggerApi(url);
       s.specFromURL(url, function(doc) {
-
         if (!doc.hasOwnProperty('apiDeclarations')) {
           alert("Missing apiDeclarations.  This does not appear to be a valid project.");
           return;
         }
 
-        ModelService.resetTypesAndModels();
-        $timeout(function() {
-          doc.apiDeclarations.forEach(function (file, i) {
-            doc.apiDeclarations[i] = service.importFileObject(file);
-          });
-          service.doc = doc;
-          service.files = service.doc.apiDeclarations;
-          service.remoteURL = url;
-        }, 0);
+        service.open(doc, url);
       });
+    },
+
+    open: function(doc, url, project) {
+      ModelService.resetTypesAndModels();
+
+      $timeout(function() {
+        doc.apiDeclarations.forEach(function (file, i) {
+          doc.apiDeclarations[i] = service.importFileObject(file);
+        });
+        service.doc = doc;
+        service.files = service.doc.apiDeclarations;
+        service.remoteURL = url;
+        project = service.doc;
+      }, 0);
+    },
+
+    new: function(project) {
+      service.open({
+        apiVersion: "1.0.0",
+        swaggerVersion: "1.2",
+        apiDeclarations: []
+      }, "Untitled", project);
+    },
+
+    close: function(project) {
+      ModelService.resetTypesAndModels();
+      service.doc = null;
+      service.files = [];
+      service.remoteURL = "";
+      project = null;
     },
 
     importFileObject: function(fileObj) {
