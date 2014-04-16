@@ -1,156 +1,191 @@
-<div class="url" ng-click="replaceURL()" title="Click to enter new URL">{{projectService.remoteURL || "No open project.  You should create or open one!"}}</div>
+<div class="nav">
+  <div class="logo">swagger</div>
+  <div class="project-dropdown">
 
-<ul>
-  <li><a class="" ng-click="workspaceService.new()">New Project</a></li>
-  <li><a class="" ng-click="workspaceService.close()">Close Project</a></li>
-</ul>
+    <div class="dropdown">
+      <div class="url" ng-click="projectDropdownVisible = !projectDropdownVisible" title="Click to enter new URL">{{projectService.remoteURL || "No open project.  You should create or open one!"}}</div>
+      <ul class="history" ng-if="projectDropdownVisible">
+        <li ng-repeat="project in workspaceService.history" ng-click="clickProjectInHistory($index)">{{project.url}} | {{project.created}} |  {{project.modified}}</li>
+      </ul>
+    </div>
 
-<div ng-if="projectService.doc">
-  <ul class="tabs">
-    <li ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
-  </ul>
-  <a ng-click="newResource()">New Resource</a>
-</div>
-
-<div class="panel editor">
-  <a ng-click="openInSwaggerUI()" ng-if="projectService.doc">Open in Swagger UI</a>
-  <div ui-ace="{mode: 'javascript', onLoad: editorLoaded, onChange: editorChanged}" readonly="true" ng-model="fileContents"></div>
-</div>
-
-<div class="panel" ng-if="projectService.files.length > 0">
-  <h1>Resource</h1>
-
-  <input type="text" class="box" ng-model="projectService.files[activeIndex].resourcePath" />
-  <a ng-mousedown="deleteResource(activeIndex)">Delete Resource</a>
-
-  <div class="items">
-    <h2>APIs</h2>
-    <a ng-click="newAPI(projectService.files[activeIndex].apis, 0)">New API</a>
-    <ul class="apis">
-      <li ng-repeat="api in projectService.files[activeIndex].apis track by $index">
-        <div class="heading error" ng-if="api.operations.length == 0">
-          <span class="method"></span>
-          <span class="name" editable-text="api.path">{{api.path}}</span>
-          <span class="summary">API has zero operations. Delete resource?</span>
-          <a ng-click="removeFromArrayByIndex(projectService.files[activeIndex].apis, $index)">X</a>
-        </div>
-        <div ng-if="api.operations.length == 0">
-          <a ng-mousedown="newOperationAfterIndex(api)">New Operation Below This One</a>
-        </div>
-
-        <ul class="operations">
-          <li ng-repeat="operation in api.operations track by $index">
-            <div class="right-menu">
-              <a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>
-            </div>
-            <div class="heading" ng-click="headingClicked(operation, $event)">
-
-              <select ng-if="operation.__open" ng-model="operation.method" ng-options="m for m in methods"></select>
-              <span ng-if="!operation.__open">{{operation.method}}</span>
-              <span class="name" editable-text="operation.__path">{{operation.__path}}</span>
-              <!--<input ng-if="operation.__open" type="text" class="name" ng-model="operation.__path" />-->
-              <!--<span ng-if="!operation.__open" class="name">{{operation.__path}}</span>-->
-              <input ng-if="operation.__open" type="text" placeholder="summary" class="summary" ng-model="operation.summary" />
-              <span ng-if="!operation.__open" class="summary">{{operation.summary}}</span>
-            </div>
-
-            <div class="edit" ng-if="operation.__open">
-              Return type: <select ng-model="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" ng-options="type for type in projectUtilities.typesAsArray"></select>
-
-              <input type="checkbox" ng-disabled="operation.__friendlyType == 'void'" ng-model="operation.__array" />array?
-
-              <table class="parameters">
-                <thead>
-                  <tr>
-                    <td>Param Type</td>
-                    <td>Description</td>
-                    <td>Type</td>
-                    <td>R?</td>
-                    <td>Name</td>
-                    <td>M?</td>
-                    <td></td>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr ng-class="{changed: parameter.__changed}" ng-repeat="parameter in operation.parameters track by $index">
-                    <td>
-                      <select ng-model="parameter.paramType" ng-options="pt for pt in paramTypes" ></select>
-                    </td>
-                    <td>
-                      <input type="text" placeholder="description" ng-model="parameter.description"/>
-                    </td>
-                    <td>
-                      <select ng-model="parameter.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
-                    </td>
-                    <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
-                    <td>
-                      <input type="text" placeholder="name" ng-model="parameter.name"/>
-                    </td>
-                    <td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
-                    <td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a></td>
-                  </tr>
-                </tbody>
-              </table>
-              <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
-              <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
-            </div>
-
-          </li>
-        </ul>
-
-      </li>
-
+    <ul class="actions">
+      <li><a class="" ng-click="workspaceService.clickNew()">New</a></li>
+      <li><a class="" ng-click="workspaceService.clickOpenFromURL()">Open URL</a></li>
+      <li><a class="" ng-click="workspaceService.clickSaveCurrentProject()">Save</a></li>
+      <li><a class="" ng-click="workspaceService.clickSaveCurrentProjectAs()">Save As</a></li>
+      <li><a class="" ng-click="openInSwaggerUI()">Open in Swagger UI</a></li>
     </ul>
+
+  </div>
+</div>
+
+<div class="container">
+  <div class="panel" ng-if="projectService.remoteURL">
+    <div class="resources">
+      <div class="section">
+        <span class="title">RESOURCES</span>
+      </div>
+      <div>
+        <ul class="tabs">
+          <li class="section" title="Double-click to rename" ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-dblclick="doubleClickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
+        </ul>
+        <a ng-click="newResource()">New Resource</a>
+      </div>
+    </div>
+
+    <!--<input type="text" class="box" ng-model="projectService.files[activeIndex].resourcePath" />-->
+    <!--<a ng-mousedown="deleteResource(activeIndex)">Delete Resource</a>-->
+
+    <div class="section" ng-if="projectService.files.length > 0">
+      <span class="title">APIs</span>
+      <a class="new" ng-click="newAPI(projectService.files[activeIndex].apis, 0)">New API</a>
+    </div>
+
+    <div class="section headings">
+      <ul class="apis">
+        <li ng-repeat="api in projectService.files[activeIndex].apis track by $index">
+          <div class="heading error" ng-if="api.operations.length == 0">
+            <span class="method"></span>
+            <span class="path" editable-text="api.path">{{api.path}}</span>
+            <span class="summary">API has zero operations. Delete resource?</span>
+            <a ng-click="removeFromArrayByIndex(projectService.files[activeIndex].apis, $index)">X</a>
+          </div>
+          <div ng-if="api.operations.length == 0">
+            <a ng-mousedown="newOperationAfterIndex(api)">New Operation Below This One</a>
+          </div>
+
+          <ul class="operations">
+            <li ng-repeat="operation in api.operations track by $index">
+              <!--<div class="right-menu">-->
+                <!--<a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>-->
+              <!--</div>-->
+              <div class="heading" ng-class="{open: operation.__open}" ng-click="headingClicked(operation, $event)">
+
+                <div class="row">
+                  <select class="method" ng-if="operation.__open" ng-model="operation.method" ng-options="m for m in methods"></select>
+                  <span class="method" ng-if="!operation.__open">{{operation.method}}</span>
+                  <span class="path" ng-if="operation.__open" editable-text="operation.__path">{{operation.__path}}</span>
+                  <span class="path" ng-if="!operation.__open">{{operation.__path}}</span>
+                  <input ng-if="operation.__open" type="text" placeholder="summary" class="summary" title="summary" ng-model="operation.summary" />
+                  <span ng-if="!operation.__open" class="summary" title="{{operation.summary}}">{{operation.summary}}</span>
+                </div>
+                <div class="row" ng-if="operation.__open">
+                  <input type="text" placeholder="nickname" class="nickname" title="nickname" ng-model="operation.nickname" />
+                  <div class="return-type">
+                    Return type: <select ng-model="operation.__friendlyType" e-ng-change="returnTypeChanged(operation)" ng-options="type for type in projectUtilities.typesAsArray"></select>
+
+                    <label><input type="checkbox" title="array" ng-disabled="operation.__friendlyType == 'void'" ng-model="operation.__array" />array?</label>
+
+                  </div>
+                </div>
+                <div class="row" ng-if="operation.__open">
+                  <textarea class="notes" placeholder="notes" title="notes" ng-model="operation.notes"></textarea>
+                </div>
+
+              </div>
+
+              <div class="section settings" ng-if="operation.__open">
+
+                <table class="parameters">
+                  <thead>
+                    <tr>
+                      <td>Param Type</td>
+                      <td>Description</td>
+                      <td>Type</td>
+                      <td title="Required?">Req'd?</td>
+                      <td>Name</td>
+                      <td title="Allow multiple?">&gt;=1?</td>
+                      <td></td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-class="{changed: parameter.__changed}" ng-repeat="parameter in operation.parameters track by $index">
+                      <td>
+                        <select ng-model="parameter.paramType" ng-options="pt for pt in paramTypes" ></select>
+                      </td>
+                      <td>
+                        <input type="text" placeholder="description" ng-model="parameter.description"/>
+                      </td>
+                      <td>
+                        <select ng-model="parameter.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
+                      </td>
+                      <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
+                      <td>
+                        <input type="text" placeholder="name" ng-model="parameter.name"/>
+                      </td>
+                      <td><input type="checkbox" ng-disabled="!parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
+                      <td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
+                <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
+              </div>
+
+            </li>
+          </ul>
+
+        </li>
+
+      </ul>
+    </div>
+
+    <div class="section">
+      <span class="title">MODELS</span>
+      <a class="new" ng-click="newModel()">New Model</a>
+    </div>
+
+    <div class="section headings">
+      <ul class="models last">
+        <li ng-repeat="model in modelService.models track by $index">
+          <!--<div class="right-menu">-->
+            <!--<a ng-click="deleteModel(modelService.models, model)">x</a>-->
+          <!--</div>-->
+          <div class="heading" ng-class="{open: model.__open}" ng-click="headingClicked(model, $event)">
+            <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
+            <input ng-if="model.__open" type="text" class="summary" placeholder="description" ng-model="model.description" />
+            <span ng-if="!model.__open" class="summary">{{model.description}}</span>
+          </div>
+
+          <div class="section settings" ng-if="model.__open">
+            <table class="properties">
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Description</td>
+                  <td>Type</td>
+                  <td>Req'd?</td>
+                  <td></td>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr ng-repeat="property in model.properties | orderByObject track by $index">
+                  <td>
+                    {{property.__order}}
+                    <input type="text" ng-class="{error: property.__duplicate}" title="{{errorsForObject(property)}}" ng-model="property.__name"/>
+                  </td>
+                  <td>
+                    <input type="text" ng-model="property.description"/>
+                  </td>
+                  <td>
+                    <select ng-model="property.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
+                  </td>
+                  <!--<td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>-->
+                  <!--<td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>-->
+                  <td><a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <a ng-mousedown="newProperty(model)">Add Property</a>
+          </div>
+        </li>
+      </ul>
+    </div>
   </div>
 
-  <div class="items">
-    <h2>Models</h2>
-    <a ng-click="newModel()">New Model</a>
-
-    <ul class="models last">
-      <li ng-repeat="model in modelService.models track by $index">
-        <div class="right-menu">
-          <a ng-click="deleteModel(modelService.models, model)">x</a>
-        </div>
-        <div class="heading" ng-click="headingClicked(model, $event)">
-          <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
-          <input ng-if="model.__open" type="text" class="summary" placeholder="description" ng-model="model.description" />
-          <span ng-if="!model.__open" class="summary">{{model.description}}</span>
-        </div>
-
-        <div class="edit" ng-show="model.__open">
-          <table class="properties">
-            <thead>
-              <tr>
-                <td>Name</td>
-                <td>Description</td>
-                <td>Type</td>
-                <td>Req?</td>
-                <td></td>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr ng-repeat="property in model.properties | orderByObject track by $index">
-                <td>
-                  {{property.__order}}
-                  <input type="text" ng-class="{error: property.__duplicate}" title="{{errorsForObject(property)}}" ng-model="property.__name"/>
-                </td>
-                <td>
-                  <input type="text" ng-model="property.description"/>
-                </td>
-                <td>
-                  <select ng-model="property.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
-                </td>
-                <!--<td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>-->
-                <!--<td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>-->
-                <td><a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a></td>
-              </tr>
-            </tbody>
-          </table>
-          <a ng-mousedown="newProperty(model)">Add Property</a>
-        </div>
-      </li>
-    </ul>
+  <div class="panel editor">
+    <div ui-ace="{mode: 'javascript', onLoad: editorLoaded, onChange: editorChanged}" readonly="true" ng-model="fileContents"></div>
   </div>
 </div>

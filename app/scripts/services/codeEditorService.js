@@ -73,7 +73,7 @@ angular.module('swaggerEditorApp').factory('CodeEditorService', function (Projec
             range.start = matching;
           }
 
-          editor.getSession().addMarker(range, "ace_active-line", "fullLine");
+          editor.getSession().addMarker(range, "ace-highlight", "fullLine");
           editor.scrollToLine(range.start.row - 2);
         }
       }, 0);

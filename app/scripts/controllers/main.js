@@ -1,7 +1,6 @@
 'use strict';
 
 app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, WorkspaceService, ProjectService, ModelService, ProjectUtilities, CodeEditorService) {
-
   $scope.workspaceService = WorkspaceService;
   $scope.projectService = ProjectService;
   $scope.modelService = ModelService;
@@ -9,6 +8,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
 
   $scope.activeIndex = 0;
   $scope.fileContents = "";
+
+  $scope.projectDropdownVisible = false;
 
   $scope.methods = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS'];
   $scope.paramTypes = ['path', 'query', 'body', 'header', 'form'];
@@ -62,9 +63,17 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
     }
   }, true);
 
-
   //init
-  WorkspaceService.openProject("http://petstore.swagger.wordnik.com/api/api-docs");
+  WorkspaceService.openMostRecentProject();
+//  WorkspaceService.openFromURL();
+//  WorkspaceService.new();
+//
+//  $http.get('/data/pet-data.json').success(function(data) {
+//    console.log(data);
+//    ProjectService.doc.apiDeclarations.push(data);
+//    ProjectService.doc.apiDeclarations.push(data);
+//    ProjectService.open(ProjectService.doc, 'PetStore', WorkspaceService.project);
+//  });
 
   $scope.removeFromArrayByIndex = function(arr, index) {
     arr.splice(index, 1);
@@ -76,8 +85,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
 
   $scope.newParameter = function(parameters) {
     parameters.push(          {
-      "name": "(name)",
-      "description": "(description)",
+      "name": "",
+      "description": "",
       "defaultValue": "",
       "required": false,
       "__friendlyType": "integer",
@@ -88,7 +97,7 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
   };
 
   $scope.headingClicked = function(obj, event) {
-    if (event.target.className == 'heading' || !obj.__open) {
+    if (event.target.className == 'heading open' || !obj.__open) {
       closeAllHeadings(ProjectService.files[$scope.activeIndex], obj);
     }
   };
@@ -102,9 +111,11 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
       }
     };
 
-    ProjectUtilities.forEachItemInFile(fileObj, {
-      operation: closeOrToggle
-    });
+    if (fileObj) {
+      ProjectUtilities.forEachItemInFile(fileObj, {
+        operation: closeOrToggle
+      });
+    }
 
     ModelService.forEach({
       model: closeOrToggle
@@ -116,8 +127,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
     api.operations.splice(newIndex, 0, {
 //      __class: "new",
       "method": "GET",
-      "summary": "(summary)",
-      "nickname": "(nickname)",
+      "summary": "",
+      "nickname": "",
+      "notes": "",
       "parameters": [],
       "__friendlyType": "void",
       "__path": api.path
@@ -165,6 +177,50 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
     CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
   };
 
+  //rename resource
+  $scope.doubleClickTab = function(index) {
+    var currentName = ProjectService.files[index].resourcePath;
+    var requestedName = prompt("[Rename resource] Please enter a new resource name, or click Cancel.", currentName);
+
+    while (requestedName) {
+      if (requestedName && requestedName != currentName) {
+        if (requestedName[0] != "/") {
+          requestedName = "/" + requestedName;
+        }
+        var newName = requestedName.match(/\/[a-zA-Z0-9]{1,}/);
+        if (newName) {
+          newName = newName[0].toLowerCase();
+        }
+
+        if (newName == requestedName) {
+          var duplicate = false;
+          ProjectService.files.forEach(function(file) {
+            if (file.resourcePath == newName) {
+              duplicate = true;
+            }
+          });
+
+          if (duplicate) {
+            requestedName = prompt("[Rename resource] Sorry, that name is already taken.  Please make changes, or click Cancel to keep " + currentName + ".", requestedName);
+          } else {
+            ProjectService.files[index].resourcePath = newName;
+            ProjectUtilities.forEachItemInFile(ProjectService.files[index], {
+              operation: function(op) {
+                op.__path = op.__path.toLowerCase().replace(currentName, newName);
+              }
+            });
+            requestedName = null;
+          }
+        } else {
+          requestedName = prompt("[Rename resource] Sorry, that name is invalid.  Please make changes, or click Cancel to keep " + currentName + ".", requestedName);
+        }
+      } else {
+        requestedName = null;
+      }
+
+    }
+  };
+
   $scope.deleteResource = function(index) {
     //delete each model in resource
     ProjectUtilities.forEachItemInFile(ProjectService.files[$scope.activeIndex], {
@@ -195,13 +251,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
     window.open('views/swagger.html', '_swagger');
   };
 
-  $scope.replaceURL = function() {
-    var url = prompt("Please enter new url", ProjectService.remoteURL);
-    if (url) {
-      ProjectService.importDocFromURL(url);
-    }
-  };
-
   $scope.newResource = function() {
     var resources = {};
     ProjectService.files.forEach(function(file) {
@@ -222,4 +271,9 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
     });
     $scope.activeIndex = ProjectService.files.length - 1;
   };
+
+  $scope.clickProjectInHistory = function(index) {
+    $scope.projectDropdownVisible = false;
+    WorkspaceService.openFromHistory(index);
+  }
 });

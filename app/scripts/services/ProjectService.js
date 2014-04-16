@@ -6,49 +6,71 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
     remoteURL: "",
 
 
-    importDocFromURL: function(url) {
+    importAndOpenDocFromURL: function(url, successFn, failFn) {
       var s = new SwaggerApi(url);
       s.specFromURL(url, function(doc) {
-        if (!doc.hasOwnProperty('apiDeclarations')) {
-          alert("Missing apiDeclarations.  This does not appear to be a valid project.");
-          return;
-        }
+        if (doc.hasOwnProperty('apiDeclarations')) {
+          doc = service.openDoc(url, doc);
 
-        service.open(doc, url);
+          successFn(doc);
+        } else {
+          alert("[Open URL] Missing apiDeclarations.  This does not appear to be a valid project.");
+          failFn(doc);
+        }
       });
     },
 
-    open: function(doc, url, project) {
-      ModelService.resetTypesAndModels();
+    openDoc: function(url, originalDoc) {
+      var doc = angular.copy(originalDoc);
+      service.close();
+
+      doc.apiDeclarations.forEach(function (file, i) {
+        doc.apiDeclarations[i] = service.importFileObject(file);
+      });
 
       $timeout(function() {
-        doc.apiDeclarations.forEach(function (file, i) {
-          doc.apiDeclarations[i] = service.importFileObject(file);
-        });
         service.doc = doc;
         service.files = service.doc.apiDeclarations;
         service.remoteURL = url;
-        project = service.doc;
+
       }, 0);
+
+      return doc;
     },
 
-    new: function(project) {
-      service.open({
+    newDoc: function() {
+      service.openDoc("Untitled", {
         apiVersion: "1.0.0",
         swaggerVersion: "1.2",
         apiDeclarations: []
-      }, "Untitled", project);
+      });
     },
 
-    close: function(project) {
+    close: function() {
       ModelService.resetTypesAndModels();
       service.doc = null;
       service.files = [];
       service.remoteURL = "";
-      project = null;
     },
 
-    importFileObject: function(fileObj) {
+    exportDoc: function(originalDoc) {
+      var doc = angular.copy(originalDoc);
+
+      console.log("inside exportDoc, we start with");
+      console.log(doc.apiDeclarations[0].models);
+
+      doc.apiDeclarations.forEach(function (file, i) {
+        doc.apiDeclarations[i] = service.exportFileObject(file);
+      });
+
+      console.log("exported models");
+      console.log(doc.apiDeclarations[0].models);
+
+      return doc;
+    },
+
+    importFileObject: function(originalFileObj) {
+      var fileObj = angular.copy(originalFileObj);
       ModelService.importTypesAndExtractModels(fileObj);
 
       //add a __path to each operation object, __id to model, and __name to each property object
@@ -206,7 +228,7 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
     },
 
     exportFileObject: function(originalFileObj, format) {
-      console.log("export");
+      console.log("inside export file object");
       var fileObj = angular.copy(originalFileObj);
 
       var revertBackToTypeAndFormat = function(obj) {
@@ -242,9 +264,10 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
       console.log("inserting models back into file object");
       //make sure models hash exists
       fileObj.models = {};
+
       ModelService.forEach({
         model: function(model, modelName) {
-//          console.log("modelName = " + modelName);
+          console.log("exporting model " + modelName);
           fileObj.models[modelName] = angular.copy(ModelService.models[modelName]);
         }
       });
@@ -272,6 +295,7 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
           delete(model.__open);
         },
         property: function(property) {
+          delete(property.__array);
           delete(property.__order);
           delete(property.__name);
           delete(property.__storedName);

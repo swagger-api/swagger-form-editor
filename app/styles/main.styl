@@ -1,6 +1,25 @@
+$green = #86bf40;
+$gray = #f1f1f1;
+
 body {
   font: 12px sans-serif;
-  padding: 20px 50px;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+ box-sizing: border-box;
+}
+
+.container {
+
+}
+
+.ace-highlight {
+  background-color: rgba($green, .1);
+  position: absolute;
+  width: 100% !important;
+  left: 0 !important;
 }
 
 h1 {
@@ -13,65 +32,220 @@ h2 {
   margin: 0;
 }
 
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.nav {
+  background-color: $green;
+  padding: 8px 25px;
+  position: fixed;
+  width: 100%;
+  z-index: 9999;
+
+  .logo {
+    color: white;
+    display: inline-block;
+    font-size: 20px;
+  }
+
+  .project-dropdown {
+    margin: -25px auto 0;
+    position: relative;
+    width: 600px;
+
+    .dropdown {
+      display: inline-block;
+      position: relative;
+
+      .url {
+        background-color: white;
+        border: 2px solid $green;
+        color: gray;
+        display: inline-block;
+        position: relative;
+        width: 420px;
+      }
+
+      ul.history {
+        background-color: white;
+        border: 2px solid $green;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        width: 420px;
+
+        li {
+          padding: 10px;
+          position: relative;
+
+          &:hover {
+            background-color: lighten($green, 80%);
+            cursor: pointer;
+          }
+        }
+      }
+    }
+      
+    ul.actions {
+      display: inline-block;
+      list-style-type: none;
+
+      li {
+        display: inline-block;
+      }
+    }
+  }
+}
+
+.error {
+  color: red;
+
+  &:hover {
+    color: lighten(red, 10%) !important;
+  }
+}
+
+.container {
+  padding: 70px 30px 20px;
+
+  .panel {
+    vertical-align: top;
+    width: 48%;
+    min-width: 604px;
+
+    &.editor {
+      height: 100%;
+      left: 50%;
+      position: fixed;
+      top: 50px;
+    }
+
+    .section {
+      background-color: $gray;
+      border: 2px solid white;
+      padding: 5px;
+
+      &.headings {
+        background-color: lighten($green, 90%);
+      }
+
+      &.settings {
+        border: 0;
+        background-color: lighten($green, 70%);
+      }
+
+      span.title {
+        color: $green;
+        font-size: 16px;
+      }
+
+      a.new {
+        float: right;
+      }
+    }
+
+    .resources {
+    }
+  }
+}
+
 .box {
   border: 1px solid black;
   margin: 4px 0;
   padding: 4px 8px;
 }
 
-.panel {
-  vertical-align: top;
-  width: 48%;
-
-  &.editor {
-    height: 100%;
-    left: 50%;
-    position: fixed;
-    top: 0;
-  }
-
-
-  ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-
-    li {
-      .error {
-        background-color: pink;
-      }
-    }
-  }
-}
-
 .ace_editor {
   height: 92%;
-  margin: 25px 0 0 25px;
+  margin: 20px 0 0 25px;
   position: absolute;
 }
 
+select, input, textarea {
+  background-color: white;
+  border: 2px solid $green;
+  padding: 2px;
+}
+
 .heading {
-  border: 1px solid black;
+  background-color: white;
+  border: 2px solid $green;
   cursor: pointer;
-  font-size: 16px;
-  margin-top: 10px;
+  font-size: 14px;
+  margin: 10px 0 0;// 8px;
   padding: 3px 5px;
   user-select: none;
-
 
   &.error {
     background-color: lightpink;
   }
 
-  .method {
-    display: inline-block;
-    font-size: 11px;
-    min-width: 40px;
+  &.open {
+    border: 5px solid $green;
+
+    .summary {
+      float: right;
+    }
+
+    .path {
+      &:hover {
+        color: darken($green, 20%);
+      }
+    }
   }
 
-  .name {
-    display: inline-block;
-    width: 150px;
+  .row {
+    margin-bottom: 2px;
+    width: 100%;
+
+    //first row
+    .method {
+      display: inline-block;
+      font-size: 11px;
+      min-width: 55px;
+    }
+
+    .path {
+      display: inline-block;
+      max-width: 200px;
+      margin: 0 5px;
+      vertical-align: middle;
+      width: 35%;
+    }
+
+    .summary {
+      display: inline-block;
+      /*white-space: nowrap;*/
+      /*overflow: hidden;*/
+      /*text-overflow: ellipsis;*/
+      vertical-align: middle;
+      width: 40%;
+    }
+
+    //second row
+    .nickname {
+      display: inline-block;
+      width: 30%;
+    }
+
+    .return-type {
+      display: inline-block;
+      width: 68%;
+      position: relative;
+      right: 0;
+      text-align: right;
+    }
+
+    //third row
+    .notes {
+      display: inline-block;
+      vertical-align: middle;
+      width: 100%;
+    }
   }
 }
 
@@ -119,22 +293,24 @@ h2 {
 }
 
 ul.tabs {
-  margin: 15px 0 0;
-  padding: 0;
-  width: 50%;
 
-  li {
-    border: 1px solid #ccc;
+  li.section {
     cursor: pointer;
-    display: inline-block;
-    font-size: 15px;
-    padding: 10px;
-    margin: 5px 10px 0 0;
+    display: inline;
+    font-size: 12px;
     user-select: none;
 
     &.active {
-      border-width: 3px;
+      background-color: $green;
       cursor: default;
+
+      &:hover {
+        color: black;
+      }
+    }
+
+    &:hover {
+      color: $green;
     }
   }
 }
