@@ -266,9 +266,18 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
       fileObj.models = {};
 
       ModelService.forEach({
-        model: function(model, modelName) {
+        model: function(originalModel, modelName) {
           console.log("exporting model " + modelName);
-          fileObj.models[modelName] = angular.copy(ModelService.models[modelName]);
+          var model = angular.copy(originalModel);
+
+          Object.keys(model.properties).forEach(function(propertyName) {
+            if (model.properties[propertyName].__required) {
+              model.required = model.required || [];
+              model.required.push(propertyName);
+            }
+          });
+
+          fileObj.models[modelName] = angular.copy(angular.copy(model));
         }
       });
 
@@ -300,6 +309,7 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
           delete(property.__name);
           delete(property.__storedName);
           delete(property.__duplicate);
+          delete(property.__required);
         }
       });
 

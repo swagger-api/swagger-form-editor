@@ -135,10 +135,21 @@ angular.module('swaggerEditorApp').factory('ModelService', function (ProjectUtil
         model: function(model, modelName) {
           model.__id = model.id;
           var i = 1;
-          for (var propertyName in model.properties) {
+          Object.keys(model.properties).forEach(function(propertyName) {
             model.properties[propertyName].__name = propertyName;
             model.properties[propertyName].__storedName = propertyName;
             model.properties[propertyName].__order = i++;
+          });
+
+          if (model.hasOwnProperty('required')) {
+            model.required.forEach(function (requiredName) {
+              if (model.properties.hasOwnProperty(requiredName)) {
+                model.properties[requiredName].__required = true;
+              } else {
+                console.log(modelName + " " + requiredName + " property is required but does not exist in model");
+              }
+            });
+            delete (model.required);
           }
 
           //extract models from file

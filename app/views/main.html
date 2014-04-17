@@ -178,8 +178,7 @@
                   <td>
                     <select ng-model="property.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
                   </td>
-                  <!--<td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>-->
-                  <!--<td><input type="checkbox" ng-if="parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>-->
+                  <td><input type="checkbox" ng-model="property.__required" /></td>
                   <td><a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a></td>
                 </tr>
               </tbody>
