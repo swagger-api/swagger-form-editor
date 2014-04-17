@@ -128,6 +128,7 @@ ul {
       background-color: $gray;
       border: 2px solid white;
       padding: 5px;
+      position: relative;
 
       &.headings {
         background-color: lighten($green, 90%);
@@ -249,68 +250,69 @@ select, input, textarea {
   }
 }
 
-.items {
-  ul {
-    li {
-      position: relative;
+ul.items {
+  li {
+    position: relative;
 
-      .right-menu {
-        background-color: white;
-        font-size: 20px;
-        height: 100%;
-        padding-left: 5px;
-        position: absolute;
-        right: -35px;
-        top: 0;
-        width: 30px;
+    .right-menu {
+      background-color: white;
+      font-size: 15px;
+      height: 100%;
+      position: absolute;
+      right: -35px;
+      top: 0;
+      width: 30px;
 
-        a {
-          cursor: pointer;
+      a {
+        color: lighten($green, 50%);
+        cursor: pointer;
+        font-family: 'Verdana';
+        padding: 2px 5px;
+        margin: 0;
+        text-decoration: none;
 
-          &:hover {
-            color: red;
-          }
+        &:hover {
+          color: red;
         }
-      }
-    }
-  }
-
-
-  table {
-    thead tr {
-      color: #555;
-      text-decoration: underline;
-    }
-
-    tbody tr {
-      font-size: 14px;
-
-      &.changed {
-        background-color: lightgoldenrodyellow;
       }
     }
   }
 }
 
-ul.tabs {
+.tabs {
+  ul {
+    display: inline-block;
+    /*margin: 6px 0;*/
 
-  li.section {
-    cursor: pointer;
-    display: inline;
-    font-size: 12px;
-    user-select: none;
+    li.section {
+      cursor: pointer;
+      display: inline;
+      font-size: 12px;
+      user-select: none;
 
-    &.active {
-      background-color: $green;
-      cursor: default;
+      &.active {
+        background-color: $green;
+        cursor: default;
+
+        &:hover {
+          color: black;
+        }
+      }
 
       &:hover {
-        color: black;
+        color: $green;
       }
     }
+  }
 
-    &:hover {
-      color: $green;
+  .actions {
+    display: inline-block;
+    position: absolute;
+    right: 5px;
+    top: 0;
+
+    a:last-child {
+      margin-left: 10px;
     }
   }
 }

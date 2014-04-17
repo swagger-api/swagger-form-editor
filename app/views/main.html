@@ -26,16 +26,18 @@
       <div class="section">
         <span class="title">RESOURCES</span>
       </div>
-      <div>
-        <ul class="tabs">
+      <div class="tabs section">
+        <ul>
           <li class="section" title="Double-click to rename" ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-dblclick="doubleClickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
         </ul>
-        <a ng-click="newResource()">New Resource</a>
+        <div class="actions">
+          <a ng-if="projectService.files.length > 0" ng-click="deleteResource(activeIndex)">Delete {{projectService.files[activeIndex].resourcePath}}</a>
+          <a ng-click="newResource()">New Resource</a>
+        </div>
       </div>
     </div>
 
     <!--<input type="text" class="box" ng-model="projectService.files[activeIndex].resourcePath" />-->
-    <!--<a ng-mousedown="deleteResource(activeIndex)">Delete Resource</a>-->
 
     <div class="section" ng-if="projectService.files.length > 0">
       <span class="title">APIs</span>
@@ -55,11 +57,11 @@
             <a ng-mousedown="newOperationAfterIndex(api)">New Operation Below This One</a>
           </div>
 
-          <ul class="operations">
+          <ul class="operations items">
             <li ng-repeat="operation in api.operations track by $index">
-              <!--<div class="right-menu">-->
-                <!--<a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>-->
-              <!--</div>-->
+              <div class="right-menu">
+                <a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>
+              </div>
               <div class="heading" ng-class="{open: operation.__open}" ng-click="headingClicked(operation, $event)">
 
                 <div class="row">
@@ -137,11 +139,11 @@
     </div>
 
     <div class="section headings">
-      <ul class="models last">
+      <ul class="models items">
         <li ng-repeat="model in modelService.models track by $index">
-          <!--<div class="right-menu">-->
-            <!--<a ng-click="deleteModel(modelService.models, model)">x</a>-->
-          <!--</div>-->
+          <div class="right-menu">
+            <a ng-click="deleteModel(modelService.models, model)">x</a>
+          </div>
           <div class="heading" ng-class="{open: model.__open}" ng-click="headingClicked(model, $event)">
             <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
             <input ng-if="model.__open" type="text" class="summary" placeholder="description" ng-model="model.description" />
