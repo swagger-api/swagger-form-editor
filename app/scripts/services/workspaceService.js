@@ -1,15 +1,20 @@
-angular.module('swaggerEditorApp').factory('WorkspaceService', function (ProjectService, $timeout) {
+angular.module('swaggerEditorApp').factory('WorkspaceService', function (ProjectService, localStorageService, $timeout) {
 
   var service = {
     project: null,
-    history: [
-      {
-        url: "http://petstore.swagger.wordnik.com/api/api-docs",
-        project: null,
-        created: "April 12",
-        modified: "April 12"
-      }
-    ],
+    history: (function() {
+      var history = localStorageService.get('swagger.history');
+      if (!history || history.length == 0) {
+        var timestamp = Date.now();
+        history = [{
+          url: "http://petstore.swagger.wordnik.com/api/api-docs",
+          project: null,
+          created: timestamp,
+          modified: timestamp
+        }];
+     }
+      return history;
+    })(),
 
     projectIndexInHistory: function(url) {
       var historyIndex = null;
@@ -32,6 +37,16 @@ angular.module('swaggerEditorApp').factory('WorkspaceService', function (Project
     close: function() {
       ProjectService.close();
       service.project = null;
+    },
+
+    clickDelete: function() {
+      var historyIndex = service.projectIndexInHistory(ProjectService.remoteURL);
+
+      if (historyIndex != null) {
+        service.history.splice(historyIndex, 1);
+        localStorageService.set('swagger.history', service.history);
+      }
+      service.close();
     },
 
     openFromHistory: function(index) {
@@ -60,13 +75,15 @@ angular.module('swaggerEditorApp').factory('WorkspaceService', function (Project
         if (historyIndex == null) {
           ProjectService.importAndOpenDocFromURL(url, function(doc) {
             service.project = doc;
+            var timestamp = Date.now();
 
             ProjectService.history.unshift({
               url: url,
               project: null,
-              created: "Today",
-              modified: "Today"
+              created: timestamp,
+              modified: timestamp
             });
+            localStorageService.set('swagger.history', service.history);
           });
         } else {
           service.openFromHistory(historyIndex);
@@ -98,10 +115,12 @@ angular.module('swaggerEditorApp').factory('WorkspaceService', function (Project
         url: service.history[historyIndex].url,
         project: ProjectService.exportDoc(ProjectService.doc),
         created: service.history[historyIndex].created,
-        modified: "Today"
+        modified: Date.now()
       });
 
       service.history.splice(historyIndex + 1, 1);
+      localStorageService.set('swagger.history', service.history);
+
     },
 
     clickSaveCurrentProjectAs: function() {
@@ -117,13 +136,15 @@ angular.module('swaggerEditorApp').factory('WorkspaceService', function (Project
 
         if (historyIndex == null) {
           //save as most recent, open it
+          var timestamp = Date.now();
 
           service.history.unshift({
             url: requestedName,
             project: ProjectService.exportDoc(ProjectService.doc),
-            created: "Today",
-            modified: "Today"
+            created: timestamp,
+            modified: timestamp
           });
+          localStorageService.set('swagger.history', service.history);
 
           service.openMostRecentProject();
           requestedName = null;

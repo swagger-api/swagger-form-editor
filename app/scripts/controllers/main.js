@@ -45,6 +45,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
       } else {
         $scope.fileContents = "(No resources. Click 'New Resource' to create.)";
       }
+    } else {
+      $scope.fileContents = "(No project selected.\nClick 'New', 'Open URL', or select a project from the history dropdown.)";
     }
   }, true);
 
@@ -57,8 +59,6 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
         ProjectService.files[$scope.activeIndex] = file;
         $scope.fileContents = ProjectService.exportFileObject(ProjectService.files[$scope.activeIndex], 'json');
         CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
-      } else {
-        $scope.fileContents = "(No resources. Click 'New Resource' to create.)";
       }
     }
   }, true);

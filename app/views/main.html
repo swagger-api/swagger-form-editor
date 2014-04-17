@@ -5,16 +5,20 @@
     <div class="dropdown">
       <div class="url" ng-click="projectDropdownVisible = !projectDropdownVisible" title="Click to enter new URL">{{projectService.remoteURL || "No open project.  You should create or open one!"}}</div>
       <ul class="history" ng-if="projectDropdownVisible">
-        <li ng-repeat="project in workspaceService.history" ng-click="clickProjectInHistory($index)">{{project.url}} | {{project.created}} |  {{project.modified}}</li>
+        <li ng-repeat="project in workspaceService.history" ng-click="clickProjectInHistory($index)" title="Created: {{project.created | date:'MMM d h:mma'}}  Modified: {{project.modified | date:'MMM d h:mma'}}">
+          <span class="name">{{project.url}}</span>
+          <span class="timestamp">{{project.modified | recentDate}}</span>
+        </li>
       </ul>
     </div>
 
     <ul class="actions">
-      <li><a class="" ng-click="workspaceService.clickNew()">New</a></li>
-      <li><a class="" ng-click="workspaceService.clickOpenFromURL()">Open URL</a></li>
-      <li><a class="" ng-click="workspaceService.clickSaveCurrentProject()">Save</a></li>
-      <li><a class="" ng-click="workspaceService.clickSaveCurrentProjectAs()">Save As</a></li>
-      <li><a class="" ng-click="openInSwaggerUI()">Open in Swagger UI</a></li>
+      <li><a ng-click="workspaceService.clickNew()">New</a> |</li>
+      <li><a ng-click="workspaceService.clickOpenFromURL()">Open URL</a> |</li>
+      <li ng-if="projectService.remoteURL"><a ng-click="workspaceService.clickSaveCurrentProject()">Save</a> |</li>
+      <li ng-if="projectService.remoteURL"><a ng-click="workspaceService.clickSaveCurrentProjectAs()">Save As</a> |</li>
+      <li ng-if="projectService.remoteURL"><a ng-click="workspaceService.clickDelete()">Delete</a> |</li>
+      <li ng-if="projectService.remoteURL"><a ng-click="openInSwaggerUI()">Open in Swagger UI</a></li>
     </ul>
 
   </div>
