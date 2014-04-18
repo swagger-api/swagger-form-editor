@@ -83,8 +83,9 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
       return fileObj;
     },
 
-    cleanUpFileObject: function(originalFileObj) {
-      var fileObj = angular.copy(originalFileObj);
+    cleanUpFileObject: function(fileObj) {
+      console.log("cleanUpFileObject");
+//      var fileObj = angular.copy(originalFileObj);
 
       var paramTypeChanged = function(parameter) {
         if (['query', 'header', 'path'].indexOf(parameter.paramType) > -1) {
@@ -224,6 +225,7 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
       //merge methods with the same path into one
       mergeOperationsForDuplicateAPIsIntoOneAPI();
 
+      console.log(JSON.stringify(fileObj, null, 2));
       return fileObj;
     },
 
@@ -277,7 +279,7 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
             }
           });
 
-          fileObj.models[modelName] = angular.copy(angular.copy(model));
+          fileObj.models[modelName] = model;
         }
       });
 
@@ -325,10 +327,16 @@ angular.module('swaggerEditorApp').factory('ProjectService', function (ModelServ
     // actually renames the modelname in ModelService.models?  no
 
     renameModelAcrossProject: function(newType, currentType) {
+      console.log("renameModelAcrossProject");
       for (var i = 0; i < service.files.length; i++) {
         ProjectUtilities.renameTypeInFile(service.files[i], newType, currentType);
+        console.log("FILE IS NOW");
+        console.log(service.files[i]);
       }
       ModelService.renameTypeInModels(newType, currentType);
+      console.log("Do models have it?");
+      console.log(ModelService.models.hasOwnProperty('Pet'));
+      console.log(ModelService.models.hasOwnProperty('PetYO'));
     }
   };
 

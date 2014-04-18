@@ -37,11 +37,8 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
           }
         });
 
-        var file = ProjectService.cleanUpFileObject(ProjectService.files[$scope.activeIndex]);
-        ProjectService.files[$scope.activeIndex] = file;
-        $scope.fileContents = ProjectService.exportFileObject(ProjectService.files[$scope.activeIndex], 'json');
-        CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
-
+        //console.log("$watch: clean up in DOCS");
+        cleanUpOnChangeAndUpdateCodeView();
       } else {
         $scope.fileContents = "(No resources. Click 'New Resource' to create.)";
       }
@@ -50,18 +47,22 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
     }
   }, true);
 
-  //listen for changes to models
+//  listen for changes to models
   $scope.$watch('modelService.models', function(newValue) {
     if (newValue != null) {
       if (ProjectService.files.length > 0) {
-
-        var file = ProjectService.cleanUpFileObject(ProjectService.files[$scope.activeIndex]);
-        ProjectService.files[$scope.activeIndex] = file;
-        $scope.fileContents = ProjectService.exportFileObject(ProjectService.files[$scope.activeIndex], 'json');
-        CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
+        //console.log("$watch: clean up in MODELS");
+        cleanUpOnChangeAndUpdateCodeView();
       }
     }
   }, true);
+
+  var cleanUpOnChangeAndUpdateCodeView = function() {
+    var file = ProjectService.cleanUpFileObject(ProjectService.files[$scope.activeIndex]);
+    ProjectService.files[$scope.activeIndex] = file;
+    $scope.fileContents = ProjectService.exportFileObject(ProjectService.files[$scope.activeIndex], 'json');
+    CodeEditorService.highlightBlocksInFile(ProjectService.files[$scope.activeIndex], editor);
+  };
 
   //init
   WorkspaceService.openMostRecentProject();

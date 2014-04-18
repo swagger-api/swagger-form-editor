@@ -78,12 +78,14 @@ angular.module('swaggerEditorApp').factory('ProjectUtilities', function () {
     renameType: function (object, newName, originalName) {
       if (object.hasOwnProperty('__friendlyType') &&
         object.__friendlyType == originalName) {
+//        console.log("renaming " + originalName + " to " + newName);
         object.__friendlyType = newName;
       }
     },
 
     //rename model across all parameters and operations
     renameTypeInFile: function (fileObj, newName, originalName) {
+//      console.log("renameTypeInFile");
       utilities.forEachItemInFile(fileObj, {
         parameter: function(param) {
 //          console.log("renaming " + originalName + " to " + newName + " for");
