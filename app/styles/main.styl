@@ -194,6 +194,7 @@ select, input, textarea {
 
   &.open {
     border: 5px solid $green;
+    min-height: 41px;
 
     .summary {
       float: right;
@@ -203,6 +204,14 @@ select, input, textarea {
       &:hover {
         color: darken($green, 20%);
       }
+    }
+
+    .name {
+      padding-top: 4px;
+    }
+
+    .description {
+      float: right;
     }
   }
 
@@ -253,6 +262,20 @@ select, input, textarea {
       display: inline-block;
       vertical-align: middle;
       width: 100%;
+    }
+
+    //model
+    .name {
+      display: inline-block;
+      margin: 0 5px 0 2px;
+      vertical-align: middle;
+      width: 262px;
+    }
+
+    .description {
+      display: inline-block;
+      visibility: middle;
+      width: 50%;
     }
   }
 }

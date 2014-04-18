@@ -275,5 +275,33 @@ app.controller('MainCtrl', function ($scope, $http, $filter, $timeout, Workspace
   $scope.clickProjectInHistory = function(index) {
     $scope.projectDropdownVisible = false;
     WorkspaceService.openFromHistory(index);
+  };
+
+  $scope.clickEnum = function(parameter) {
+    var currentValues = "";
+
+    if (parameter.hasOwnProperty('enum') && parameter.enum.length > 0) {
+      currentValues = parameter.enum.join(', ');
+    }
+
+    var newValues = prompt("[Enum] Please enter the possible values for this field separated by commas, or click Cancel.", currentValues);
+
+    if (newValues != null) {
+      var array = newValues.split(',')
+        .filter(function(value) {
+          return value != "";
+        })
+        .map(function(value) {
+          return value.trim();
+        });
+
+      if (array.length > 0) {
+        parameter.enum = array;
+      } else {
+        delete(parameter.enum);
+      }
+    }
+
+    delete(parameter.__temp);
   }
 });

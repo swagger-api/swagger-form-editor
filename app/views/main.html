@@ -99,9 +99,10 @@
                       <td>Param Type</td>
                       <td>Description</td>
                       <td>Type</td>
-                      <td title="Required?">Req'd?</td>
+                      <td title="Required?">Req'd</td>
                       <td>Name</td>
-                      <td title="Allow multiple?">&gt;=1?</td>
+                      <td title="Allow multiple?">&gt;=1</td>
+                      <td>Enum</td>
                       <td></td>
                     </tr>
                   </thead>
@@ -116,12 +117,24 @@
                       <td>
                         <select ng-model="parameter.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
                       </td>
-                      <td><input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" /></td>
+                      <td>
+                        <input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" />
+                      </td>
                       <td>
                         <input type="text" placeholder="name" ng-model="parameter.name"/>
                       </td>
-                      <td><input type="checkbox" ng-disabled="!parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" /></td>
-                      <td><a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a></td>
+                      <td>
+                        <input type="checkbox" ng-disabled="!parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" />
+                      </td>
+                      <td>
+                        <a class="enum" ng-if="parameter.hasOwnProperty('enum') && parameter.enum.length > 0" ng-click="clickEnum(parameter)">
+                          {{"yes (" + parameter.enum.length + ")"}}</a>
+                        <input ng-if="!(parameter.hasOwnProperty('enum') && parameter.enum.length > 0)"
+                               type="checkbox" ng-change="clickEnum(parameter)" ng-model="parameter.__temp" />
+                      </td>
+                      <td>
+                        <a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -149,9 +162,12 @@
             <a ng-click="deleteModel(modelService.models, model)">x</a>
           </div>
           <div class="heading" ng-class="{open: model.__open}" ng-click="headingClicked(model, $event)">
-            <span class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
-            <input ng-if="model.__open" type="text" class="summary" placeholder="description" ng-model="model.description" />
-            <span ng-if="!model.__open" class="summary">{{model.description}}</span>
+            <div class="row">
+              <span ng-if="model.__open" class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
+              <span ng-if="!model.__open" class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}">{{model.__id || '[blank]'}}</span>
+              <input ng-if="model.__open" type="text" class="description" placeholder="description" ng-model="model.description" />
+              <span ng-if="!model.__open" class="description">{{model.description}}</span>
+            </div>
           </div>
 
           <div class="section settings" ng-if="model.__open">
@@ -161,7 +177,8 @@
                   <td>Name</td>
                   <td>Description</td>
                   <td>Type</td>
-                  <td>Req'd?</td>
+                  <td>Req'd</td>
+                  <td>Enum</td>
                   <td></td>
                 </tr>
               </thead>
@@ -178,8 +195,18 @@
                   <td>
                     <select ng-model="property.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
                   </td>
-                  <td><input type="checkbox" ng-model="property.__required" /></td>
-                  <td><a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a></td>
+                  <td>
+                    <input type="checkbox" ng-model="property.__required" />
+                  </td>
+                  <td>
+                    <a class="enum" ng-if="property.hasOwnProperty('enum') && property.enum.length > 0" ng-click="clickEnum(property)">
+                      {{"yes (" + property.enum.length + ")"}}</a>
+                    <input ng-if="!(property.hasOwnProperty('enum') && property.enum.length > 0)"
+                           type="checkbox" ng-change="clickEnum(property)" ng-model="property.__temp" />
+                  </td>
+                  <td>
+                    <a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a>
+                  </td>
                 </tr>
               </tbody>
             </table>
