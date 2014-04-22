@@ -1,5 +1,5 @@
 <div class="nav">
-  <div class="logo">swagger</div>
+  <div class="logo">Swagger Editor</div>
   <div class="project-dropdown">
 
     <div class="dropdown">
@@ -28,24 +28,29 @@
   <div class="panel" ng-if="projectService.remoteURL">
     <div class="resources">
       <div class="section">
-        <span class="title">RESOURCES</span>
+        <span class="title">
+          <i class="fa fa-globe"></i>
+          RESOURCES
+          <a class="new" ng-click="newResource()" title="New resource">
+            <i class="fa fa-plus-circle"></i>
+          </a>
+        </span>
       </div>
       <div class="tabs section">
         <ul>
-          <li class="section" title="Double-click to rename" ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-dblclick="doubleClickTab($index)" ng-class="{active: activeIndex == $index}">{{file.resourcePath}}</li>
+          <li class="section" title="Double-click to rename" ng-repeat="file in projectService.files" ng-click="clickTab($index)" ng-dblclick="doubleClickTab($index)" ng-class="{active: activeIndex == $index}"><span>{{file.resourcePath}}</span></li>
         </ul>
-        <div class="actions">
-          <a ng-if="projectService.files.length > 0" ng-click="deleteResource(activeIndex)">Delete {{projectService.files[activeIndex].resourcePath}}</a>
-          <a ng-click="newResource()">New Resource</a>
-        </div>
       </div>
     </div>
 
-    <!--<input type="text" class="box" ng-model="projectService.files[activeIndex].resourcePath" />-->
-
     <div class="section" ng-if="projectService.files.length > 0">
-      <span class="title">APIs</span>
-      <a class="new" ng-click="newAPI(projectService.files[activeIndex].apis, 0)">New API</a>
+      <span class="title">
+        <i class="fa fa-road"></i>
+        APIs
+        <a class="new" ng-click="newAPI(projectService.files[activeIndex].apis, 0)" title="New API">
+          <i class="fa fa-plus-circle"></i>
+        </a>
+      </span>
     </div>
 
     <div class="section headings">
@@ -63,11 +68,10 @@
 
           <ul class="operations items">
             <li ng-repeat="operation in api.operations track by $index">
-              <div class="right-menu">
-                <a ng-click="removeFromArrayByIndex(api.operations, $index)">x</a>
-              </div>
               <div class="heading" ng-class="{open: operation.__open}" ng-click="headingClicked(operation, $event)">
-
+                <div class="right-menu">
+                  <a ng-click="removeFromArrayByIndex(api.operations, $index)"><i class="fa fa-minus-circle"></i></a>
+                </div>
                 <div class="row">
                   <select class="method" ng-if="operation.__open" ng-model="operation.method" ng-options="m for m in methods"></select>
                   <span class="method" ng-if="!operation.__open">{{operation.method}}</span>
@@ -92,18 +96,16 @@
               </div>
 
               <div class="section settings" ng-if="operation.__open">
-
-                <table class="parameters">
+                <table class="parameters" ng-if="operation.parameters.length > 0">
                   <thead>
                     <tr>
                       <td>Param Type</td>
                       <td>Description</td>
                       <td>Type</td>
-                      <td title="Required?">Req'd</td>
+                      <td title="Required?">Req</td>
                       <td>Name</td>
                       <td title="Allow multiple?">&gt;=1</td>
-                      <td>Enum</td>
-                      <td></td>
+                      <td colspan="2">Enum</td>
                     </tr>
                   </thead>
                   <tbody>
@@ -112,7 +114,7 @@
                         <select ng-model="parameter.paramType" ng-options="pt for pt in paramTypes" ></select>
                       </td>
                       <td>
-                        <input type="text" placeholder="description" ng-model="parameter.description"/>
+                        <input type="text" class="description" placeholder="description" ng-model="parameter.description"/>
                       </td>
                       <td>
                         <select ng-model="parameter.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
@@ -121,25 +123,27 @@
                         <input type="checkbox" ng-disabled="parameter.paramType=='path'" ng-model="parameter.required" />
                       </td>
                       <td>
-                        <input type="text" placeholder="name" ng-model="parameter.name"/>
+                        <input type="text" class="name" placeholder="name" title="{{parameter.name}}" ng-model="parameter.name"/>
                       </td>
                       <td>
                         <input type="checkbox" ng-disabled="!parameter.hasOwnProperty('allowMultiple')" ng-model="parameter.allowMultiple" />
                       </td>
-                      <td>
-                        <a class="enum" ng-if="parameter.hasOwnProperty('enum') && parameter.enum.length > 0" ng-click="clickEnum(parameter)">
-                          {{"yes (" + parameter.enum.length + ")"}}</a>
+                      <td class="enum">
+                        <a ng-if="parameter.hasOwnProperty('enum') && parameter.enum.length > 0" ng-click="clickEnum(parameter)" title="{{parameter.enum.join(', ')}}">
+                          {{parameter.enum.length}}</a>
                         <input ng-if="!(parameter.hasOwnProperty('enum') && parameter.enum.length > 0)"
                                type="checkbox" ng-change="clickEnum(parameter)" ng-model="parameter.__temp" />
                       </td>
                       <td>
-                        <a ng-click="removeFromArrayByIndex(operation.parameters, $index)">x</a>
+                        <a class="delete" ng-click="removeFromArrayByIndex(operation.parameters, $index)"><i class="fa fa-minus-circle"></i></a>
                       </td>
                     </tr>
                   </tbody>
                 </table>
-                <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
-                <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation Below This One</a>
+                <div class="actions">
+                  <a ng-mousedown="newParameter(operation.parameters)">Add Parameter</a>
+                  <a ng-mousedown="newOperationAfterIndex(api, $index)">New Operation</a>
+                </div>
               </div>
 
             </li>
@@ -151,17 +155,23 @@
     </div>
 
     <div class="section">
-      <span class="title">MODELS</span>
-      <a class="new" ng-click="newModel()">New Model</a>
+      <span class="title">
+        <i class="fa fa-rocket"></i>
+        MODELS
+        <a class="new" ng-click="newModel()" title="New model">
+          <i class="fa fa-plus-circle"></i>
+        </a>
+      </span>
     </div>
 
     <div class="section headings">
       <ul class="models items">
         <li ng-repeat="model in modelService.models track by $index">
-          <div class="right-menu">
-            <a ng-click="deleteModel(modelService.models, model)">x</a>
-          </div>
+
           <div class="heading" ng-class="{open: model.__open}" ng-click="headingClicked(model, $event)">
+            <div class="right-menu">
+              <a ng-click="deleteModel(modelService.models, model)"><i class="fa fa-minus-circle"></i></a>
+            </div>
             <div class="row">
               <span ng-if="model.__open" class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}" editable-text="model.__id">{{model.__id || '[blank]'}}</span>
               <span ng-if="!model.__open" class="name" ng-class="{error: model.__duplicate}" title="{{errorsForObject(model)}}">{{model.__id || '[blank]'}}</span>
@@ -171,15 +181,15 @@
           </div>
 
           <div class="section settings" ng-if="model.__open">
-            <table class="properties">
+            <table class="properties" ng-if="modelService.propertyCount(model) > 0">
               <thead>
                 <tr>
                   <td>Name</td>
                   <td>Description</td>
                   <td>Type</td>
                   <td>Req'd</td>
-                  <td>Enum</td>
-                  <td></td>
+                  <td colspan="2">Enum</td>
+                  <!--<td></td>-->
                 </tr>
               </thead>
 
@@ -190,7 +200,7 @@
                     <input type="text" ng-class="{error: property.__duplicate}" title="{{errorsForObject(property)}}" ng-model="property.__name"/>
                   </td>
                   <td>
-                    <input type="text" ng-model="property.description"/>
+                    <input type="text" class="description" ng-model="property.description"/>
                   </td>
                   <td>
                     <select ng-model="property.__friendlyType" ng-options="type for type in projectUtilities.typesAsArray | filter:'!void'"></select>
@@ -198,19 +208,21 @@
                   <td>
                     <input type="checkbox" ng-model="property.__required" />
                   </td>
-                  <td>
-                    <a class="enum" ng-if="property.hasOwnProperty('enum') && property.enum.length > 0" ng-click="clickEnum(property)">
-                      {{"yes (" + property.enum.length + ")"}}</a>
+                  <td class="enum">
+                    <a ng-if="property.hasOwnProperty('enum') && property.enum.length > 0" ng-click="clickEnum(property)" title="{{property.enum.join(', ')}}">
+                      {{property.enum.length}}</a>
                     <input ng-if="!(property.hasOwnProperty('enum') && property.enum.length > 0)"
                            type="checkbox" ng-change="clickEnum(property)" ng-model="property.__temp" />
                   </td>
                   <td>
-                    <a ng-click="removeFromObjectByKey(model.properties, property.__name)">x</a>
+                    <a class="delete" ng-click="removeFromObjectByKey(model.properties, property.__name)"><i class="fa fa-minus-circle"></i></a>
                   </td>
                 </tr>
               </tbody>
             </table>
-            <a ng-mousedown="newProperty(model)">Add Property</a>
+            <div class="actions">
+              <a ng-mousedown="newProperty(model)">Add Property</a>
+            </div>
           </div>
         </li>
       </ul>

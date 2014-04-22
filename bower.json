@@ -15,6 +15,7 @@
     "angular-mocks": "1.2.6",
     "angular-scenario": "1.2.6",
     "angular-ui-ace": "~0.1.0",
-    "angular-xeditable": "~0.1.8"
+    "angular-xeditable": "~0.1.8",
+    "font-awesome-stylus": "*"
   }
 }

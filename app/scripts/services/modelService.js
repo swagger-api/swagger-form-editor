@@ -194,6 +194,14 @@ angular.module('swaggerEditorApp').factory('ModelService', function (ProjectUtil
       service.allTypes[newName] = {type: newName};
       delete(service.allTypes[originalName]);
       ProjectUtilities.generateTypesAsArray(service.allTypes);
+    },
+
+    propertyCount: function(model) {
+      if (model.hasOwnProperty('properties')) {
+        return Object.keys(model.properties).length;
+      } else {
+        return 0;
+      }
     }
   };
 

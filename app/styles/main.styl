@@ -1,5 +1,11 @@
+@import '../bower_components/font-awesome-stylus/stylus/index.styl';
+$fa-font-path = '../bower_components/font-awesome-stylus/fonts';
+$fa-version = '4.0.3';
+@import '../bower_components/font-awesome-stylus/stylus/path.styl';
+
 $green = #86bf40;
-$gray = #f1f1f1;
+$gray = #f2f2f2;
+$lightgreen = #e2eec5;
 
 body {
   font: 12px sans-serif;
@@ -49,16 +55,20 @@ ul {
     color: white;
     display: inline-block;
     font-size: 20px;
+    margin-left: 20px;
+    margin-right: 38px;
+    vertical-align: middle;
   }
 
   .project-dropdown {
-    margin: -25px auto 0;
+    display: inline-block;
     position: relative;
-    width: 600px;
 
     .dropdown {
       display: inline-block;
+      margin-right: 20px;
       position: relative;
+      vertical-align: middle;
 
       .url {
         background-color: white;
@@ -100,9 +110,29 @@ ul {
       
     ul.actions {
       display: inline-block;
+      vertical-align: middle;
 
       li {
+        color: lighten($green, 90%);
         display: inline-block;
+        font-size: 13px;
+        padding: 1px;
+
+        a:hover {
+          color: white;
+        }
+
+        .icon.new {
+          color: white;
+        }
+
+        .icon.open {
+          color: yellow;
+        }
+
+        .icon.save {
+          color: white;
+        }
       }
     }
   }
@@ -121,8 +151,8 @@ ul {
 
   .panel {
     vertical-align: top;
-    width: 48%;
-    min-width: 604px;
+    width: 49%;
+    min-width: 611px;
 
     &.editor {
       height: 100%;
@@ -134,26 +164,98 @@ ul {
     .section {
       background-color: $gray;
       border: 2px solid white;
-      padding: 5px;
+      padding: 6px 9px;
       position: relative;
 
       &.headings {
         background-color: lighten($green, 90%);
+        padding-bottom: 15px;
       }
 
-      &.settings {
+      &.settings.section {
         border: 0;
-        background-color: lighten($green, 70%);
+        background-color: lighten($green, 80%);
+
+        input, select {
+          border-color: lighten($green, 30%);
+        }
+
+        .delete {
+          color: lighten($green, 50%);
+          font-size: 16px;
+          margin-left: 11px;
+          margin-top: -8px;
+          position: absolute;
+          right: 10px;
+
+          &:hover {
+            color: red;
+          }
+
+        }
+
+        input[type="text"] {
+          border-color: white;
+        }
+
+        .parameters .description {
+          width: 190px;
+        }
+
+        .properties .description {
+          width: 185px;
+        }
+
+        .name {
+          width: 60px;
+        }
+
+        thead tr {
+          margin-bottom: 5px;
+        }
+
+        td.enum {
+          min-width: 20px;
+          text-align: center;
+
+          a {
+            color: lighten($green, 5%);
+            font-size: 17px;
+            font-weight: 700;
+
+            &:hover {
+              color: darken($green, 10%);
+            }
+          }
+        }
+
+        .actions {
+          margin: 10px 0 5px;
+          text-align: right;
+
+          a {
+            background-color: lighten($green, 50%);
+            margin-left: 4px;
+            padding: 7px 8px;
+            text-decoration: none;
+          }
+        }
       }
 
       span.title {
         color: $green;
-        font-size: 16px;
+        font-size: 20px;
+        font-weight: 700;
+
+        .fa {
+          font-size: 23px;
+        }
+
+        a.new {
+          float: right;
+        }
       }
 
-      a.new {
-        float: right;
-      }
     }
 
     .resources {
@@ -168,8 +270,8 @@ ul {
 }
 
 .ace_editor {
-  height: 92%;
-  margin: 20px 0 0 25px;
+  height: 88%;
+  margin: 20px 0 0 15px;
   position: absolute;
 }
 
@@ -180,7 +282,7 @@ select, input, textarea {
 }
 
 .heading {
-  background-color: white;
+  background-color: lighten($green, 98%);
   border: 2px solid $green;
   cursor: pointer;
   font-size: 14px;
@@ -192,10 +294,22 @@ select, input, textarea {
     background-color: lightpink;
   }
 
+  &:hover {
+    .right-menu {
+      opacity: 1;
+    }
+  }
+
   &.open {
+    background-color: white;
     border: 5px solid $green;
+    margin-top: 15px;
     min-height: 41px;
 
+    .right-menu {
+      opacity: 1;
+    }
+      
     .summary {
       float: right;
     }
@@ -285,52 +399,74 @@ ul.items {
     position: relative;
 
     .right-menu {
-      background-color: white;
-      font-size: 15px;
       height: 100%;
+      opacity: 0.1;
+      padding-left: 10px;
       position: absolute;
-      right: -35px;
+      right: -30px;
       top: 0;
       width: 30px;
 
+      &:hover {
+        opacity: 1;
+      }
+
       a {
-        color: lighten($green, 50%);
         cursor: pointer;
         font-family: 'Verdana';
-        padding: 2px 5px;
-        margin: 0;
+        padding: 2px 5px 2px;
+        margin: 5px 0 0;
         text-decoration: none;
 
-        &:hover {
-          color: red;
+        .fa {
+          color: lighten($green, 70%);
+          font-size: 18px;
+
+          &:hover {
+            color: red;
+          }
         }
       }
     }
   }
 }
 
-.tabs {
+.tabs.section {
+  padding-left: 0 !important;
+
   ul {
     display: inline-block;
     /*margin: 6px 0;*/
 
     li.section {
+      color: darken($green, 50%);
       cursor: pointer;
       display: inline;
       font-size: 12px;
+      letter-spacing: .02em;
       user-select: none;
+
+      &:first-child {
+        border-left: none;
+      }
+
+      &:last-child {
+        border-right-width: 4px;
+      }
 
       &.active {
         background-color: $green;
+        color: lighten($green, 95%);
         cursor: default;
+        font-weight: 700;
 
         &:hover {
-          color: black;
+          color: lighten($green, 95%);
         }
       }
 
       &:hover {
-        color: $green;
+        color: darken($green, 30%);
       }
     }
   }
@@ -359,12 +495,11 @@ ul.items {
 }
 
 a {
+  cursor: pointer;
   display: inline-block;
-  margin: 4px 0;
-  text-decoration: underline;
 
   &:hover {
-    color: blue;
+    color: darken($green, 20%);
   }
 }
 
