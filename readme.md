@@ -1,10 +1,10 @@
 Swagger Editor
 ==============
 
-git clone https://github.com/wordnik/swagger-editor.git
+git clone https://github.com/wordnik/swagger-form-editor.git
 
 ```
-cd swagger-editor
+cd swagger-form-editor
 npm install
 bower install
 ```
