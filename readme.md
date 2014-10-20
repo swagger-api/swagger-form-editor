@@ -1,6 +1,9 @@
 Swagger Editor
 ==============
 
+An experimental and unsupported tool to build swagger specifications graphically.
+
+
 git clone https://github.com/wordnik/swagger-form-editor.git
 
 ```
